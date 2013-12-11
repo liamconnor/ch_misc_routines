@@ -64,8 +64,6 @@ def beam_fit(Data, RA, dec=0):
 
     return beam_fit
 
-# Create a dictionary with each fitting object's information in the form: {"Obj": [RA_min, RA_max, Declination]}
-celestial_object = { "CasA": [344, 358, 58.83], "TauA": [77, 87, 83.6], "CygA": [297, 302, 40.73]}
 
 parser = argparse.ArgumentParser(description="This programs tries to fit beam from point-source transits.")
 parser.add_argument("Data", help="Directory containing acquisition files.")
@@ -76,6 +74,13 @@ files = np.str(args.Data) + '/*h5*'
 print "Reading in Data"
 
 Data, vis, utime, RA = misc.get_data(files)
+
+RA_sun = eph.transit_RA(eph.solar_transit(utime[0]))
+sun_RA_low = RA_sun - 6
+sun_RA_low = RA_sun + 6
+
+# Create a dictionary with each fitting object's information in the form: {"Obj": [RA_min, RA_max, Declination]}
+celestial_object = { "CasA": [344, 358, 58.83], "TauA": [77, 87, 83.6], "CygA": [297, 302, 40.73], "Sun": [sun_RA_low, sun_RA_high]}
 
 if args.Objects != "All":
     srcs2fit = args.Objects
