@@ -65,25 +65,27 @@ def beam_fit(Data, RA, dec=0):
     return beam_fit
 
 # Create a dictionary with each fitting object's information in the form: {"Obj": [RA_min, RA_max, Declination]}
-celestial_object = { "CasA": [344, 358, 58.83] }#, "TauA": [77, 87, 83.6], "CygA": [297, 302, 40.73]}
+celestial_object = { "CasA": [344, 358, 58.83], "TauA": [77, 87, 83.6], "CygA": [297, 302, 40.73]}
 
 parser = argparse.ArgumentParser(description="This programs tries to fit beam from point-source transits.")
 parser.add_argument("Data", help="Directory containing acquisition files.")
+parser.add_argument("--Objects", help="Celestial objects to fit", default='All')
 args = parser.parse_args()
 
-#parser.add_argument("Object", help="")
-#parser.add_argument("", help="")
-#parser.add_argument("", help="")
-
 files = np.str(args.Data) + '/*h5*'
-files = args.Data
 print "Reading in Data"
 
 Data, vis, utime, RA = misc.get_data(files)
 
-for src in celestial_object.keys():
+if args.Objects != "All":
+    srcs2fit = args.Objects
+else:
+    srcs2fit = celestial_object.keys()
+
+for src in srcs2fit:
+
     print "Fitting", src
-    
+
     vis_obj = vis[:, :, ( RA > celestial_object[src][0] ) & ( RA < celestial_object[src][1])]
     RA_src = RA[ ( RA > celestial_object[src][0] ) & ( RA < celestial_object[src][1]) ]
     
