@@ -51,6 +51,7 @@ def beam_fit(Data, RA, dec=0):
     """
 
     autos = [  0.,   8.,  15.,  21.,  26.,  30.,  33.,  35.]
+    autos = np.arange(36)
     beam_fit = np.zeros([Data.shape[0], Data.shape[1], 5])
 
     print "Number of frequencies:", n_freq
@@ -70,15 +71,17 @@ celestial_object = { "CasA": [344, 358, 58.83], "TauA": [77, 87, 83.6], "CygA": 
 parser = argparse.ArgumentParser(description="This programs tries to fit beam from point-source transits.")
 parser.add_argument("Data", help="Directory containing acquisition files.")
 parser.add_argument("--Objects", help="Celestial objects to fit", default='All')
+parser.add_argument("--maxfile", help="", default="")
 args = parser.parse_args()
 
-files = np.str(args.Data) + '/*h5*'
+files = np.str(args.Data) + '*h5' + args.maxfile + '*'
+print files
 print "Reading in Data"
 
 Data, vis, utime, RA = misc.get_data(files)
 
 if args.Objects != "All":
-    srcs2fit = args.Objects
+    srcs2fit = [args.Objects]
 else:
     srcs2fit = celestial_object.keys()
 
@@ -89,16 +92,21 @@ for src in srcs2fit:
     vis_obj = vis[:, :, ( RA > celestial_object[src][0] ) & ( RA < celestial_object[src][1])]
     RA_src = RA[ ( RA > celestial_object[src][0] ) & ( RA < celestial_object[src][1]) ]
     
-    beam_params = beam_fit(vis_obj, RA_src, dec = celestial_object[src][2])
+    if len(RA_src) == 0:
+        pass
+    else:
+        print "Shape:", RA_src.shape 
 
-    t = misc.eph.datetime.fromtimestamp(utime[0])
-    date_str = t.strftime('%Y_%m_%d_%H:%M')
-    filename = '/scratch/k/krs/connor/beam_fit' + src + date_str + '.hdf5'
+        beam_params = beam_fit(vis_obj, RA_src, dec = celestial_object[src][2])
 
-    g = h5py.File(filename,'w')
-    g.create_dataset('beam', data = beam_params)
-    g.create_dataset('visibilities', data = vis_obj)
-    g.create_dataset('RA', data = RA_src)
-    g.close()
+        t = misc.eph.datetime.fromtimestamp(utime[0])
+        date_str = t.strftime('%Y_%m_%d_%H')
+        filename = '/scratch/k/krs/connor/beam_fit' + src + date_str + '.hdf5'
 
-    print "Saved data in", filename
+        g = h5py.File(filename,'w')
+        g.create_dataset('beam', data = beam_params)
+        g.create_dataset('visibilities', data = vis_obj)
+        g.create_dataset('RA', data = RA_src)
+        g.close()
+
+        print "Saved data in", filename

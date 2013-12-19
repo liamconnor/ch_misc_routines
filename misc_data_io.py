@@ -31,6 +31,21 @@ def autocorr_ind(nfeeds):
     feeds = np.arange(0, nfeeds)
     return nfeeds * feeds - 0.5 * feeds * (feeds - 1)
 
+def corr2baseline(nfeeds, spacing):
+    """ Assumes feed layout on cassettes is the same as correlation ordering,
+    i.e. corr[1] is outermost feed correlated with adjacent
+
+    Parameters
+    ----------
+    nfeeds: 
+           Number of single-pol feeds
+    spacing:
+           Baseline spacing in units of min spacing
+    """
+    feeds = np.arange(0, nfeeds)
+    corr_ind = nfeeds * feeds - 0.5 * feeds * (feeds - 1) + spacing
+    return corr_ind[:nfeeds - spacing]
+
 def ind2freq(freq_ind):
     if freq_ind > n_freq - 1 or freq < 0:
         print "You're out of our band!"
