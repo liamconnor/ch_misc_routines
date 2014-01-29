@@ -15,11 +15,6 @@ outfile = '/scratch/k/krs/connor/B0329_pulse_phase_mpi.hdf5'
 list = glob.glob('/scratch/k/krs/connor/chime/chime_data/20131210T060233Z/20131210T060233Z.h5.*')
 list.sort()
 
-#data_arr = abs(chd.data.data[:, 2, :].transpose())
-#time = (chd.fpga_count - chd.fpga_count[0]) * 0.010 / 3906.
-
-final_array = []
-
 chunk_length = 30
 nchunks = len(list) / chunk_length
 
@@ -49,8 +44,8 @@ for freq in range(n_freq_bins):
     print "freq", freq
     for tt in range(n_time_bins):
         folded_arr[freq, tt, :] = RC.fold_pulsar(p1, DM, nbins=n_phase_bins, \
-                                                         start_chan=freq_int*freq, end_chan=freq_int*(freq+1), \
-                                                         start_samp=time_int*tt, end_samp=time_int*(tt+1), f_ref=400.0)
+                        start_chan=freq_int*freq, end_chan=freq_int*(freq+1), \
+                        start_samp=time_int*tt, end_samp=time_int*(tt+1), f_ref=400.0)
 
 fully = comm.gather(folded_arr, root=0)
 
