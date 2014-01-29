@@ -30,6 +30,9 @@ Data, vis, utime, RA = misc.get_data(files)
 
 print "RA range of data:", RA.min(),":",RA.max()
 
+# Create a dictionary with each fitting object's information in the form: {"Obj": [RA_min, RA_max, Declination]}
+celestial_object = { "CasA": [344, 358, 58.83], "TauA": [77, 87, 83.6], "CygA": [297, 302, 40.73]}
+
 
 RA_sun = eph.transit_RA(eph.solar_transit(utime[0]))
 sun_RA_low = RA_sun - 6
@@ -39,6 +42,10 @@ print "Das sun was at: %f" % RA_sun
 
 # Create a dictionary with each fitting object's information in the form: {"Obj": [RA_min, RA_max, Declination]}.
 celestial_object = { "CasA": [344, 358, 58.83], "TauA": [77, 87, 83.6], "CygA": [297, 302, 40.73], "Sun": [sun_RA_low, sun_RA_high, 0]}
+
+RA_sun = eph.transit_RA(eph.solar_transit(utime[0]))
+sun_RA_low = RA_sun - 6
+sun_RA_low = RA_sun + 6
 
 if args.Objects != "All":
     srcs2fit = [args.Objects]
