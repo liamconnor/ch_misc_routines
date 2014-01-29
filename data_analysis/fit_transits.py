@@ -12,9 +12,6 @@ import fitting_modules as fm
 n_freq = 1024
 n_corr = 36
 
-# Create a dictionary with each fitting object's information in the form: {"Obj": [RA_min, RA_max, Declination]}
-celestial_object = { "CasA": [344, 358, 58.83], "TauA": [77, 87, 83.6], "CygA": [297, 302, 40.73]}
-
 parser = argparse.ArgumentParser(description="This programs tries to fit beam from point-source trans\
 its.")
 parser.add_argument("Data", help="Directory containing acquisition files.")
@@ -27,10 +24,16 @@ print files
 print "Reading in Data"
 
 Data, vis, utime, RA = misc.get_data(files)
+print "RA range of data:", RA.min(),":",RA.max()
+
+# Create a dictionary with each fitting object's information in the form: {"Obj": [RA_min, RA_max, Declination]}
+celestial_object = { "CasA": [344, 358, 58.83], "TauA": [77, 87, 83.6], "CygA": [297, 302, 40.73]}
 
 RA_sun = eph.transit_RA(eph.solar_transit(utime[0]))
 sun_RA_low = RA_sun - 6
 sun_RA_low = RA_sun + 6
+print ""
+print "Das sun was at: %f" % RA_sun
 
 if args.Objects != "All":
     srcs2fit = [args.Objects]
@@ -39,20 +42,19 @@ else:
 
 for src in srcs2fit:
 
-    print "Fitting", src
-
     vis_obj = vis[:, :, ( RA > celestial_object[src][0] ) & ( RA < celestial_object[src][1])]
     RA_src = RA[ ( RA > celestial_object[src][0] ) & ( RA < celestial_object[src][1]) ]
 
     if len(RA_src) == 0:
         pass
     else:
+        print "Fitting", src
         print "Shape:", RA_src.shape
 
         beam_params = fm.beam_fit(vis_obj, RA_src, dec = celestial_object[src][2])
 
         transit_time = misc.eph.datetime.fromtimestamp(utime[0])
-        date_str = transit_time.strftime('%Y_%m_%d_%H')
+        date_str = transit_time.strftime('%Y_%m_%d')
         filename = '/scratch/k/krs/connor/beam_fit' + src + date_str + '.hdf5'
 
         g = h5py.File(filename,'w')
