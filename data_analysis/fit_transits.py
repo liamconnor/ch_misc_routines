@@ -27,6 +27,10 @@ print ""
 print "Reading in Data:", files
 
 Data, vis, utime, RA = misc.get_data(files)
+print "RA range of data:", RA.min(),":",RA.max()
+
+# Create a dictionary with each fitting object's information in the form: {"Obj": [RA_min, RA_max, Declination]}
+celestial_object = { "CasA": [344, 358, 58.83], "TauA": [77, 87, 83.6], "CygA": [297, 302, 40.73]}
 
 print "RA range of data:", RA.min(),":",RA.max()
 
@@ -46,6 +50,8 @@ celestial_object = { "CasA": [344, 358, 58.83], "TauA": [77, 87, 83.6], "CygA": 
 RA_sun = eph.transit_RA(eph.solar_transit(utime[0]))
 sun_RA_low = RA_sun - 6
 sun_RA_low = RA_sun + 6
+print ""
+print "Das sun was at: %f" % RA_sun
 
 if args.Objects != "All":
     srcs2fit = [args.Objects]
@@ -53,7 +59,11 @@ else:
     srcs2fit = celestial_object.keys()
 
 for src in srcs2fit:
+<<<<<<< HEAD:fit_transits.py
     print ""
+=======
+
+>>>>>>> a43f3a4248299da07503620e45deb18ea3a5f2b7:data_analysis/fit_transits.py
     vis_obj = vis[:, :, ( RA > celestial_object[src][0] ) & ( RA < celestial_object[src][1])]
     RA_src = RA[ ( RA > celestial_object[src][0] ) & ( RA < celestial_object[src][1]) ]
     
@@ -68,7 +78,11 @@ for src in srcs2fit:
 
         transit_time = misc.eph.datetime.fromtimestamp(utime[0])
         date_str = transit_time.strftime('%Y_%m_%d')
+<<<<<<< HEAD:fit_transits.py
         filename = '/scratch/k/krs/connor/chime/analysis/beam_fit' + src + date_str + '.hdf5'
+=======
+        filename = '/scratch/k/krs/connor/beam_fit' + src + date_str + '.hdf5'
+>>>>>>> a43f3a4248299da07503620e45deb18ea3a5f2b7:data_analysis/fit_transits.py
 
         g = h5py.File(filename,'w')
         g.create_dataset('beam', data = beam_params)
