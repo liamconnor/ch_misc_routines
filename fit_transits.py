@@ -12,20 +12,6 @@ import fitting_modules as fm
 n_freq = 1024
 n_corr = 36
 
-parser = argparse.ArgumentParser(description="This programs tries to fit beam from point-source transits.")
-parser.add_argument("Data", help="Directory containing acquisition files.")
-parser.add_argument("--Objects", help="Celestial objects to fit", default='All')
-args = parser.parse_args()
-
-files = np.str(args.Data) + '/*h5*'
-print "Reading in Data"
-
-Data, vis, utime, RA = misc.get_data(files)
-
-RA_sun = eph.transit_RA(eph.solar_transit(utime[0]))
-sun_RA_low = RA_sun - 6
-sun_RA_low = RA_sun + 6
-
 # Create a dictionary with each fitting object's information in the form: {"Obj": [RA_min, RA_max, Declination]}
 celestial_object = { "CasA": [344, 358, 58.83], "TauA": [77, 87, 83.6], "CygA": [297, 302, 40.73]}
 
@@ -41,6 +27,10 @@ print files
 print "Reading in Data"
 
 Data, vis, utime, RA = misc.get_data(files)
+
+RA_sun = eph.transit_RA(eph.solar_transit(utime[0]))
+sun_RA_low = RA_sun - 6
+sun_RA_low = RA_sun + 6
 
 if args.Objects != "All":
     srcs2fit = [args.Objects]
