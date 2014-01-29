@@ -12,7 +12,7 @@ DM = 26.833 # B0329 dispersion measure
 p1 = 0.7145817552986237 # B0329 period
 
 outfile = '/scratch/k/krs/connor/B0329_pulse_phase_mpi.hdf5'
-list = glob.glob('/scratch/k/krs/connor/chime/chime_data/20131210T060233Z/20131210T060233Z.h5.03*')
+list = glob.glob('/scratch/k/krs/connor/chime/chime_data/20131210T060233Z/20131210T060233Z.h5.*')
 list.sort()
 
 #data_arr = abs(chd.data.data[:, 2, :].transpose())
@@ -20,7 +20,7 @@ list.sort()
 
 final_array = []
 
-chunk_length = 10
+chunk_length = 30
 nchunks = len(list) / chunk_length
 
 print "Total of %i files" % len(list)
@@ -52,23 +52,11 @@ for freq in range(n_freq_bins):
                                                          start_chan=freq_int*freq, end_chan=freq_int*(freq+1), \
                                                          start_samp=time_int*tt, end_samp=time_int*(tt+1), f_ref=400.0)
 
-
 fully = comm.gather(folded_arr, root=0)
 
 if jj == 0:
-   for i in range(comm.size):
-       print len(fully)
-
-"""
-
-final_array.append(folded_arr)
-
-
-
-final_array = np.concatenate(final_array, axis=1)    
-
-print "Writing folded array to", outfile
-f = h5py.File(outfile, 'w')
-f.create_dataset('folded_arr', data=final_array)
-f.close()
-"""
+    final_array = np.concatenate(fully, axis=1)
+    print "Writing folded array to", outfile, "with shape:", final_array.shape
+    f = h5py.File(outfile, 'w')
+    f.create_dataset('folded_arr', data=final_array) 
+    f.close()
