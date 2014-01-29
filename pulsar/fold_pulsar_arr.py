@@ -4,6 +4,10 @@ import h5py
 import misc_data_io as misc
 import glob
 
+from mpi4py import MPI
+comm = MPI.COMM_WORLD
+print comm.rank, comm.size
+
 DM = 26.833 # B0329 dispersion measure
 p1 = 0.7145817552986237 # B0329 period
 
@@ -16,10 +20,17 @@ list.sort()
 
 final_array = []
 
-for jj in range(15):
-    print "Starting chunk %i" % jj
+chunk_length = 30
+nchunks = len(list) / chunk_length
 
-    data_arr, time, RA = misc.get_data(list[30*jj:30*(jj+1)])[1:]
+print "Total of %i files" % len(list)
+
+jj = comm.rank
+
+for jj in range(nchunks):
+    print "Starting chunk %i of %i" % (jj+1, nchunks)
+
+    data_arr, time, RA = misc.get_data(list[chunk_length*jj:chunk_length*(jj+1)])[1:]
     data_arr = data_arr[:, 0, :]
 
     time_int = 500 # Integrate in time for 500 samples
@@ -45,7 +56,7 @@ for jj in range(15):
     
     final_array.append(folded_arr)
 
-final_array = np.concatenate(final_array, axis=-1)    
+final_array = np.concatenate(final_array, axis=1)    
 
 print "Writing folded array to", outfile
 f = h5py.File(outfile, 'w')
