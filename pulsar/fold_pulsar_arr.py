@@ -30,7 +30,7 @@ jj = comm.rank
 for jj in range(nchunks):
     print "Starting chunk %i of %i" % (jj+1, nchunks)
 
-    data_arr, time, RA = misc.get_data(list[chunk_length*jj:chunk_length*(jj+1)])[1:]
+    data_agth*jj:chunk_length*(jj+1)])[1:]
     data_arr = data_arr[:, 0, :]
 
     time_int = 500 # Integrate in time for 500 samples

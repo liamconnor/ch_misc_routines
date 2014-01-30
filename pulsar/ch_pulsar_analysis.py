@@ -98,11 +98,13 @@ class PulsarPipeline:
     
 class RFI_Clean(PulsarPipeline):
 
-    always_cut = range(111,138) + range(889,893) + range(856,860) + range(873,877)
+    always_cut = range(111,138) + range(889,893) + range(856,860) + \
+        range(873,877) + range(583,600) + range(552,568) + range(630,645) +\
+        range(678,690) + range(753, 768) + range(783, 798)
     
     def frequency_clean(self, threshold=1):
         """
-        Does an RFI cut in frequency by normalizing my nu**4 to flatten bandpass and then cutting 
+        Does an RFI cut in frequency by normalizing by nu**4 to flatten bandpass and then cutting 
         above some threshold. 
         
         Parameters
