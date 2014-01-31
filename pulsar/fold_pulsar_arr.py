@@ -44,7 +44,7 @@ for jj in range(nchunks):
 
     print "folded pulsar array has shape", folded_arr.shape
 
-    RC = chp.RFI_Clean(data_arr, time)
+    RC = chp.RFI_Clean(abs(data_arr), time)
     RC.frequency_clean()
     
     for freq in range(n_freq_bins):

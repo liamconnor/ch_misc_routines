@@ -2,6 +2,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 import h5py
+import misc_data_io as misc
+
+d_EW = 20.0 # East-west baseline in metres
+
 
 DM = 26.833 # B0329 dispersion measure
 p1 = 0.7145817552986237 # B0329 period
@@ -12,7 +16,7 @@ class PulsarPipeline:
         self.data = data_arr.copy()
         self.ntimes = self.data.shape[-1]
         self.time_stamps = time_stamps
-        
+
         if self.ntimes != len(self.time_stamps):
             raise Exception('Number of samples disagree')
             
@@ -25,6 +29,10 @@ class PulsarPipeline:
 
         self.ntimes = self.data.shape[-1]
         print "Data array has shape:", self.data.shape
+        
+        self.RA = None
+        self.dec = None
+        
 
     def dm_delays(self, dm, f_ref):
         """
@@ -87,15 +95,18 @@ class PulsarPipeline:
             profile[i] += vals[vals!=0.0].mean()
         
         return profile
-        
-        #profile2d = np.zeros([len(freq), nbins], dtype=np.complex128)
-        #for bin in range(nbins):
-        #    for nu in range(len(freq)):
-        #        vals = data[nu, bins[nu]==bin]
-        #        profile2d[nu, bin] += vals[vals!=0.0].mean()
-
-        #return profile2d
     
+    def fringe_stop(self):
+        data = self.data.copy()
+        data = data - np.mean(data, axis=-1)[:, np.newaxis]
+        freq = 1e6 * self.freq # Frequency in Hz
+        RA = np.deg2rad(self.RA * np.cos(np.deg2rad(self.dec)))
+
+        phase = np.exp(2*np.pi * 1j * d_EW * freq[:, np.newaxis] / 3e8 * np.sin(RA[np.newaxis, :]))
+        data_fringe_rot = data * phase
+    
+        return data_fringe_rot
+
 class RFI_Clean(PulsarPipeline):
 
     always_cut = range(111,138) + range(889,893) + range(856,860) + \

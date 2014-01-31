@@ -37,8 +37,8 @@ times = (fpga - fpga[0]) * 0.01000 / 3906.0
 time = times[jj * ntimes : (jj+1) * ntimes]
 print time.shape, data_arr.shape[-1]
 
-time_int = 500 # Integrate in time for 500 samples
-freq_int = 16 # Integrate over 16 freq bins
+time_int = 100 # Integrate in time for 500 samples
+freq_int = 1 # Integrate over 16 freq bins
 
 n_freq_bins = np.round( data_arr.shape[0] / freq_int )
 n_time_bins = np.round( data_arr.shape[-1] / time_int )
@@ -48,9 +48,16 @@ folded_arr = np.zeros([n_freq_bins, n_time_bins, n_phase_bins], np.complex128)
 
 print "folded pulsar array has shape", folded_arr.shape
 
-for corr in range(ncorr):
+corrs = range(36)
+autos = [0,8,15,21,26,30,33,35]
+
+for cc in autos:
+    corrs.remove(cc)
+
+print corrs
+for corr in corrs:
     print "Correlation product %i" % corr
-    RC = chp.RFI_Clean(data_arr[:, corr, :], time)
+    RC = chp.RFI_Clean(abs(data_arr[:, corr, :]), time)
     RC.frequency_clean()
     
     for freq in range(n_freq_bins):
@@ -63,8 +70,9 @@ for corr in range(ncorr):
     print "Done gathering arrays"
     if jj == 0:
         final_array = np.concatenate(fully, axis=1)
-        outfile = outdir + 'fpga_mpi_psr_phase' + np.str(corr) + '.hdf5'
+        outfile = outdir + 'abs_cross_fpga_mpi_psr_phase' + np.str(corr) + '.hdf5'
         print "Writing folded array to", outfile, "with shape:", final_array.shape
         f = h5py.File(outfile, 'w')
         f.create_dataset('folded_arr', data=final_array) 
+        f.create_dataset('times', data=time)
         f.close()

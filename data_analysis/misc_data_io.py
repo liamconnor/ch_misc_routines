@@ -47,7 +47,7 @@ def corr2baseline(nfeeds, spacing):
     return corr_ind[:nfeeds - spacing]
 
 def ind2freq(freq_ind):
-    if freq_ind > n_freq - 1 or freq < 0:
+    if freq_ind > n_freq - 1 or freq_ind < 0:
         print "You're out of our band!"
     else:
         return freq_upper - freq_ind/1024. * freq_lower
