@@ -10,34 +10,47 @@ print comm.rank, comm.size
 
 DM = 26.833 # B0329 dispersion measure
 p1 = 0.7145817552986237 # B0329 period
+dec = 54.57876944444
+
 ncorr = 36
+nnodes = 32
+file_chunk = 16
+
+"""
+parser = argparse.ArgumentParser(description="This programs tries to fit beam from point-source trans\
+its.")
+parser.add_argument("Data", help="Directory containing acquisition files.")
+parser.add_argument("--Objects", help="Celestial objects to fit", default='All')
+parser.add_argument("--minfile", help="Minfile number e.g. 0051", default="")
+parser.add_argument("--correlations", help="Maxfile number e.g. 0051", default="")
+args = parser.parse_args()
+"""
 
 outdir = '/scratch/k/krs/connor/'
 list = glob.glob('/scratch/k/krs/connor/chime/chime_data/20131210T060233Z/20131210T060233Z.h5.*')
 list.sort()
-list = list[:31*16]
+list = list[:file_chunk * nnodes]
 
-chunk_length = 31
-nchunks = len(list) / chunk_length
+nchunks = len(list) / file_chunk
 
 print "Total of %i files" % len(list)
 
 jj = comm.rank
 
 print "Starting chunk %i of %i" % (jj+1, nchunks)
-print "Getting", chunk_length*jj,":",chunk_length*(jj+1)
-data_arr, time, RA = misc.get_data(list[chunk_length*jj:chunk_length*(jj+1)])[1:]
-#data_arr = data_arr[:, 8, :]
+print "Getting", file_chunk*jj, ":", file_chunk*(jj+1)
+
+data_arr, time, RA = misc.get_data(list[file_chunk*jj:file_chunk*(jj+1)])[1:]
+
 ntimes = len(time)
 
 g = h5py.File('/scratch/k/krs/connor/psr_fpga.hdf5','r')
 fpga = g['fpga'][:]
 times = (fpga - fpga[0]) * 0.01000 / 3906.0
-
 time = times[jj * ntimes : (jj+1) * ntimes]
-print time.shape, data_arr.shape[-1]
+RA = RA[jj * ntimes: (jj+1) * ntimes]
 
-time_int = 100 # Integrate in time for 500 samples
+time_int = 500 # Integrate in time for 500 samples
 freq_int = 1 # Integrate over 16 freq bins
 
 n_freq_bins = np.round( data_arr.shape[0] / freq_int )
@@ -54,12 +67,17 @@ autos = [0,8,15,21,26,30,33,35]
 for cc in autos:
     corrs.remove(cc)
 
+corrs = [13,20,24,29,31]
+
 print corrs
 for corr in corrs:
     print "Correlation product %i" % corr
-    RC = chp.RFI_Clean(abs(data_arr[:, corr, :]), time)
+    RC = chp.RFI_Clean((data_arr[:, corr, :]), time)
+    RC.dec = dec
+    RC.RA = RA
     RC.frequency_clean()
-    
+    RC.fringe_stop()
+
     for freq in range(n_freq_bins):
         for tt in range(n_time_bins):
             folded_arr[freq, tt, :] = RC.fold_pulsar(p1, DM, nbins=n_phase_bins, \
