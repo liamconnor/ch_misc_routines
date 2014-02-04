@@ -4,7 +4,7 @@ import os
 import h5py
 import misc_data_io as misc
 
-d_EW = 20.0 # East-west baseline in metres
+d_EW = 21.0 # East-west baseline in metres
 DM = 26.833 # B0329 dispersion measure
 p1 = 0.7145817552986237 # B0329 period
 
@@ -30,7 +30,7 @@ class PulsarPipeline:
         
         self.RA = None
         self.dec = None
-        
+        print self.RA
 
     def dm_delays(self, dm, f_ref):
         """
@@ -96,7 +96,8 @@ class PulsarPipeline:
     
     def fringe_stop(self):
         """
-        Fringestops EW data so that we can collapse in time.
+        Fringestops EW data so that we can collapse in time. What this should do is take in 
+        a whole correlation array and have a table for d_EW
 
         Parameters
         ----------
@@ -107,7 +108,7 @@ class PulsarPipeline:
         data = data - np.mean(data, axis=-1)[:, np.newaxis]
         freq = 1e6 * self.freq # Frequency in Hz
         RA = np.deg2rad(self.RA * np.cos(np.deg2rad(self.dec)))
-        print "Fringestopping object at (RA,DEC):", self.RA, self.dec
+        print "Fringestopping object at (RA,DEC):", RA.mean(), self.dec
         phase = np.exp(2*np.pi * 1j * d_EW * freq[:, np.newaxis] / 3e8 * np.sin(RA[np.newaxis, :]))
         self.data = data * phase
     
@@ -174,6 +175,7 @@ def running_mean(arr, radius=50):
     """                                                                                                                
     Not clear why this works. Need to think more about it.                                                                             
     """
+    arr = abs(arr)
     n = radius*2+1
     padded = np.concatenate((arr[:, 1:radius+1][:, ::-1], arr,\
         arr[:, -radius-1:-1][:, ::-1]), axis=1)

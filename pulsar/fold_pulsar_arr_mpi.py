@@ -43,12 +43,11 @@ print "Getting", file_chunk*jj, ":", file_chunk*(jj+1)
 data_arr, time, RA = misc.get_data(list[file_chunk*jj:file_chunk*(jj+1)])[1:]
 
 ntimes = len(time)
-
+print "RA0", RA
 g = h5py.File('/scratch/k/krs/connor/psr_fpga.hdf5','r')
 fpga = g['fpga'][:]
 times = (fpga - fpga[0]) * 0.01000 / 3906.0
 time = times[jj * ntimes : (jj+1) * ntimes]
-RA = RA[jj * ntimes: (jj+1) * ntimes]
 
 time_int = 500 # Integrate in time for 500 samples
 freq_int = 1 # Integrate over 16 freq bins
@@ -67,11 +66,12 @@ autos = [0,8,15,21,26,30,33,35]
 for cc in autos:
     corrs.remove(cc)
 
-corrs = [13,20,24,29,31]
+corrs = [4,5,6,7,19,22,23,24,25,12]
 
 print corrs
 for corr in corrs:
     print "Correlation product %i" % corr
+
     RC = chp.RFI_Clean((data_arr[:, corr, :]), time)
     RC.dec = dec
     RC.RA = RA
