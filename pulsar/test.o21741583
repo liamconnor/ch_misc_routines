@@ -1,0 +1,31 @@
+----------------------------------------
+Begin PBS Prologue Thu Jan 30 19:08:16 EST 2014 1391126896
+Job ID:		21741583.gpc-sched
+Username:	connor
+Group:		krs
+Nodes:		gpc-f102n018-ib0 gpc-f124n065-ib0 gpc-f128n067-ib0 
+gpc-f132n022-ib0 gpc-f134n057-ib0 gpc-f135n061-ib0 gpc-f136n033-ib0 
+gpc-f136n038-ib0 gpc-f136n060-ib0 gpc-f137n074-ib0 gpc-f137n081-ib0 
+gpc-f140n028-ib0 gpc-f140n057-ib0 gpc-f140n059-ib0 gpc-f140n063-ib0 
+gpc-f140n064-ib0
+End PBS Prologue Thu Jan 30 19:08:17 EST 2014 1391126897
+----------------------------------------
+----------------------------------------
+Begin PBS Epilogue Thu Jan 30 19:08:24 EST 2014 1391126904
+Job ID:		21741583.gpc-sched
+Username:	connor
+Group:		krs
+Job Name:	test
+Session:	27999
+Limits:		neednodes=16:ppn=8,nodes=16:ppn=8,walltime=00:20:00
+Resources:	cput=00:00:02,mem=732kb,vmem=13468kb,walltime=00:00:03
+Queue:		batch_ib
+Account:		
+Nodes:	gpc-f102n018-ib0 gpc-f124n065-ib0 gpc-f128n067-ib0 gpc-f132n022-ib0 
+gpc-f134n057-ib0 gpc-f135n061-ib0 gpc-f136n033-ib0 gpc-f136n038-ib0 
+gpc-f136n060-ib0 gpc-f137n074-ib0 gpc-f137n081-ib0 gpc-f140n028-ib0 
+gpc-f140n057-ib0 gpc-f140n059-ib0 gpc-f140n063-ib0 gpc-f140n064-ib0
+Killing leftovers...
+
+End PBS Epilogue Thu Jan 30 19:08:25 EST 2014 1391126905
+----------------------------------------
