@@ -13,8 +13,13 @@ p1 = 0.7145817552986237 # B0329 period
 dec = 54.57876944444
 
 ncorr = 36
+<<<<<<< HEAD
 nnodes = 64
 file_chunk = 8
+=======
+nnodes = 32
+file_chunk = 16
+>>>>>>> e40949480d9914c26fbc775c22d71d035f837c33
 
 """
 parser = argparse.ArgumentParser(description="This programs tries to fit beam from point-source trans\
@@ -40,6 +45,7 @@ jj = comm.rank
 print "Starting chunk %i of %i" % (jj+1, nchunks)
 print "Getting", file_chunk*jj, ":", file_chunk*(jj+1)
 
+<<<<<<< HEAD
 data_arr, time_full, RA = misc.get_data(list[file_chunk*jj:file_chunk*(jj+1)])[1:]
 
 ntimes = len(time_full)
@@ -51,11 +57,25 @@ time = time_full[jj * ntimes : (jj+1) * ntimes]
 
 time_int = 500 # Integrate in time over time_int samples
 freq_int = 1 # Integrate over freq bins
+=======
+data_arr, time, RA = misc.get_data(list[file_chunk*jj:file_chunk*(jj+1)])[1:]
+
+ntimes = len(time)
+print "RA0", RA
+g = h5py.File('/scratch/k/krs/connor/psr_fpga.hdf5','r')
+fpga = g['fpga'][:]
+times = (fpga - fpga[0]) * 0.01000 / 3906.0
+time = times[jj * ntimes : (jj+1) * ntimes]
+
+time_int = 500 # Integrate in time for 500 samples
+freq_int = 1 # Integrate over 16 freq bins
+>>>>>>> e40949480d9914c26fbc775c22d71d035f837c33
 
 n_freq_bins = np.round( data_arr.shape[0] / freq_int )
 n_time_bins = np.round( data_arr.shape[-1] / time_int )
 n_phase_bins = 64
     
+<<<<<<< HEAD
 folded_arr = np.zeros([n_freq_bins, ncorr, n_time_bins, n_phase_bins], np.complex128)
 
 print "folded pulsar array has shape", folded_arr.shape
@@ -94,6 +114,20 @@ if jj==0:
     f.close()
 
 """
+=======
+folded_arr = np.zeros([n_freq_bins, n_time_bins, n_phase_bins], np.complex128)
+
+print "folded pulsar array has shape", folded_arr.shape
+
+corrs = range(36)
+autos = [0,8,15,21,26,30,33,35]
+
+for cc in autos:
+    corrs.remove(cc)
+
+corrs = [4,5,6,7,19,22,23,24,25,12]
+
+>>>>>>> e40949480d9914c26fbc775c22d71d035f837c33
 print corrs
 for corr in corrs:
     print "Correlation product %i" % corr
@@ -120,5 +154,8 @@ for corr in corrs:
         f.create_dataset('folded_arr', data=final_array) 
         f.create_dataset('times', data=time)
         f.close()
+<<<<<<< HEAD
 
 """
+=======
+>>>>>>> e40949480d9914c26fbc775c22d71d035f837c33
