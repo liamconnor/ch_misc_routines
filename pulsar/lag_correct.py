@@ -7,6 +7,7 @@ class PhaseAnalysis():
         self.on_gate = on_gate
         self.n_feed = 8
         self.ncorr = self.n_feed * (self.n_feed + 1) / 2
+        self.data_lag = None
 
     def get_lag_pixel(self, data):
         """
@@ -31,11 +32,13 @@ class PhaseAnalysis():
         
         nfreq = data.shape[0]
         data_pulse = data[:, :, :, self.on_gate] - 0.5 * (data[:, :, :, self.on_gate-2] + data[:, :, :, self.on_gate+2])
-        data_lag = abs(np.fft.fftshift(np.fft.fft(np.hanning(nfreq)[:, np.newaxis, np.newaxis]\
-                                                      * data_pulse, axis=0), axes=0)).mean(axis=-1)
+        self.data_lag = np.fft.fftshift(np.fft.fft(np.hanning(nfreq)[:, np.newaxis, np.newaxis]\
+                                                      * data_pulse, axis=0), axes=0)
+        data_lag_mean = abs(self.data_lag.mean(axis=0)
+
         lag_pixel = np.zeros([data.shape[1]])
         for corr in range(data.shape[1]):
-            max_pixel = np.where(data_lag[:, corr] == data_lag[:, corr].max())[0][0] - nfreq/2.
+            max_pixel = np.where(data_lag_mean[:, corr] == data_lag_mean[:, corr].max())[0][0] - nfreq/2.
             lag_pixel[corr] = max_pixel
 
         return lag_pixel
@@ -65,3 +68,5 @@ class PhaseAnalysis():
         lag_sol = np.angle(phi) * 100.0
 
         return lag_sol
+
+  
