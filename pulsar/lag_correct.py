@@ -1,10 +1,11 @@
 import numpy as np
+import misc_data_io as misc
 
 class PhaseAnalysis():
     
     def __init__(self, on_gate):
         self.on_gate = on_gate
-        self.n_ant = 8
+        self.n_feed = 8
         self.ncorr = 0.5 * n_ant * (n_ant + 1)
 
     def get_lag_pixel(self, data):
@@ -22,6 +23,17 @@ class PhaseAnalysis():
         for corr in range(self.ncorr):
             max_pixel = np.where(data_lag[:, corr] == data_lag[:, corr].max())[0][0] - nfreq/2.
             lag_pixel[corr] = max_pixel
-      
+
+        return lag_pixel
+
+
     def solve_lag(self, lag_pixel):
-          
+        lag_exp = np.exp(2 * np.pi * 1j * lag_pixel / 100.0) 
+        # divide by 100. so exponentials don't tempt numerical precision
+        phi_arr = misc.gen_corr_matrix(lag_exp, self.n_feed)
+        eval, evec = np.linalg.eigh(phi_arr)
+
+        phi = eval[-1]**0.5 * evec[:, -1]
+        lag_sol = np.angle(phi) * 100.0
+
+        return lag_sol
