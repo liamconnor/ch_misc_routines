@@ -11,10 +11,11 @@ class PhaseAnalysis():
         
         self.data_lag = None
         self.lag_pixel = None
+        self.on_pulse_data = None
 
     def get_lag_pixel(self, data):
         """
-        Takes an fft along freq axis after subtracting adjacent off-gates from ongate.
+        Takes an fft of pulsar data along freq axis after subtracting adjacent off-gates from ongate.
         Method then finds the maximum lag pixel and saves down each correlation's lag.
         
         Parameters
@@ -25,7 +26,7 @@ class PhaseAnalysis():
         Returns
         -------
         lag_pixel: vector
-              vector that stores lag pixel for each correlation product in data
+              vector that stores maximum lag pixel for each correlation product in data
         """
 
         if len(data.shape)==3:
@@ -34,10 +35,10 @@ class PhaseAnalysis():
             raise Exception("data has wrong shape")
         
         nfreq = data.shape[0]
-        data_pulse = data[:, :, :, self.on_gate] - 0.5 * (data[:, :, :, self.on_gate-2] + data[:, :, :, self.on_gate+2])
+        self.on_pulse_data = data[:, :, :, self.on_gate] - 0.5 * (data[:, :, :, self.on_gate-2] + data[:, :, :, self.on_gate+2])
         self.data_lag = np.fft.fftshift(np.fft.fft(np.hanning(nfreq)[:, np.newaxis, np.newaxis]\
-                                                      * data_pulse, axis=0), axes=0)
-        data_lag_mean = abs(self.data_lag.mean(axis=0)
+                                                      * self.on_pulse_data, axis=0), axes=0)
+        data_lag_mean = abs(self.data_lag).mean(axis=-1)
 
         lag_pixel = np.zeros([data.shape[1]])
         for corr in range(data.shape[1]):
@@ -74,7 +75,7 @@ class PhaseAnalysis():
 
         return lag_sol
         
-    def correct_lag(self, data_lag=self.data_lag):
+    def correct_lag(self, data=None):
         """
         Apply a phase correction using the lag offset to shift each correlation's lag to zero.
         
@@ -87,10 +88,8 @@ class PhaseAnalysis():
         -------
         the lag corrected inverse fourier transformed data array
         """
-        data_zerolag = data_lag * np.exp(-2*pi*1j * self.lag_pixel[:, np.newaxis, :] * \
-            np.fft.fftfreq(data.shape[0])[:, np.newaxis, np.newaxis]
-        
-        return np.fft.ifft(np.hanning(self.nfreq)[:, np.newaxis, np.newaxis] * data_zerolag, axis=0)
-            
+        if data is None: data = self.on_pulse_data
 
-  
+        data_zerolag = data * np.exp(-2*np.pi*1j * self.lag_pixel[np.newaxis, :, np.newaxis] * np.fft.fftfreq(data.shape[0])[:, np.newaxis, np.newaxis])
+        
+        return data_zerolag, #np.fft.fftshift(np.fft.fft(np.hanning(self.nfreq)[:, np.newaxis, np.newaxis] * data_zerolag, axis=0))
