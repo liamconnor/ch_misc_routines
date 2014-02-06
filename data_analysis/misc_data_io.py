@@ -27,9 +27,22 @@ def get_data(file, start=False, stop=False):
 
     return data, Vis, ctime, RA
 
-def autocorr_ind(nfeeds):
-    feeds = np.arange(0, nfeeds)
-    return nfeeds * feeds - 0.5 * feeds * (feeds - 1)
+def feed_map(feed_i, feed_j, n_feed):
+    if feed_i > feed_j:
+        return ((2*n_feed*feed_j - feed_j**2 + feed_j)/2) + (feed_i - feed_j)
+    else:
+        return ((2*n_feed*feed_i - feed_i**2 + feed_i)/2) + (feed_j - feed_i)
+
+def gen_corr_matrix(data, n_feed):
+    corr_mat = np.zeros((n_feed, n_feed), np.complex128)
+
+    for feed_i in range(n_feed):
+        for feed_j in range(n_feed):
+            if feed_i < feed_j:
+                corr_mat[feed_i, feed_j] = data[feed_map(feed_i, feed_j, n_feed)]
+                corr_mat[feed_j, feed_i] = np.conj(data[feed_map(feed_i, feed_j, n_feed)])
+    
+    return corr_mat
 
 def corr2baseline(nfeeds, spacing):
     """ Assumes feed layout on cassettes is the same as correlation ordering,
