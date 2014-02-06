@@ -4,13 +4,12 @@ import os
 import h5py
 import misc_data_io as misc
 
-
+#d_EW = 21.0 # East-west baseline in metres
 d_EW = (np.loadtxt('east_west_baseline.txt'))[np.newaxis, :, np.newaxis]
 DM = 26.833 # B0329 dispersion measure
 p1 = 0.7145817552986237 # B0329 period
 
-class PulsarPipeline:
-
+class PulsarAnalysis:
 
     def __init__(self, data_arr, time_stamps, time_res=0.010):
         self.data = data_arr.copy()
@@ -29,7 +28,6 @@ class PulsarPipeline:
 
         self.ntimes = self.data.shape[-1]
         self.ncorr = self.data.shape[1]
-
         print "Data array has shape:", self.data.shape
         
         self.RA = None
@@ -86,7 +84,6 @@ class PulsarPipeline:
         data = self.data[start_chan:end_chan, :, start_samp:end_samp].copy()
         for corr in range(36):
             data[:, corr, :] /= running_mean(data[:, corr, :])
-
         delays = self.dm_delays(dm, f_ref)[start_chan:end_chan, np.newaxis, np.newaxis] * np.ones([1, data.shape[1], data.shape[-1]])
         dedispersed_times = times[np.newaxis, np.newaxis, :] * np.ones([data.shape[0], data.shape[1], 1]) - delays
         
@@ -119,11 +116,12 @@ class PulsarPipeline:
 
         print "Fringestopping object at (RA,DEC):", np.rad2deg(RA).mean(), self.dec
 
-        phase = np.exp(-2*np.pi * 1j * d_EW * freq / 3e8 * np.sin(RA))
+        phase = np.exp(2*np.pi * 1j * d_EW * freq / 3e8 * np.sin(RA))
 
-        self.data = data * phase    
+        self.data = data * phase
+    
 
-class RFI_Clean(PulsarPipeline):
+class RFI_Clean(PulsarAnalysis):
 
     always_cut = range(111,138) + range(889,893) + range(856,860) + \
         range(873,877) + range(583,600) + range(552,568) + range(630,645) +\

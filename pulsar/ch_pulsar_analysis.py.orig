@@ -4,13 +4,20 @@ import os
 import h5py
 import misc_data_io as misc
 
-
+<<<<<<< HEAD
+#d_EW = 21.0 # East-west baseline in metres
 d_EW = (np.loadtxt('east_west_baseline.txt'))[np.newaxis, :, np.newaxis]
 DM = 26.833 # B0329 dispersion measure
 p1 = 0.7145817552986237 # B0329 period
 
-class PulsarPipeline:
+class PulsarAnalysis:
+=======
+d_EW = 21.0 # East-west baseline in metres
+DM = 26.833 # B0329 dispersion measure
+p1 = 0.7145817552986237 # B0329 period
 
+class PulsarPipeline:
+>>>>>>> e40949480d9914c26fbc775c22d71d035f837c33
 
     def __init__(self, data_arr, time_stamps, time_res=0.010):
         self.data = data_arr.copy()
@@ -28,12 +35,18 @@ class PulsarPipeline:
         self.freq = np.linspace(self.highfreq, self.lowfreq, self.nfreq)
 
         self.ntimes = self.data.shape[-1]
+<<<<<<< HEAD
         self.ncorr = self.data.shape[1]
-
+=======
+>>>>>>> e40949480d9914c26fbc775c22d71d035f837c33
         print "Data array has shape:", self.data.shape
         
         self.RA = None
         self.dec = None
+<<<<<<< HEAD
+=======
+        print self.RA
+>>>>>>> e40949480d9914c26fbc775c22d71d035f837c33
 
     def dm_delays(self, dm, f_ref):
         """
@@ -54,7 +67,11 @@ class PulsarPipeline:
     
     def fold_pulsar(self, p0, dm, nbins=32, **kwargs):
         """
+<<<<<<< HEAD
         Folds pulsar into nbins after dedispersing it. 
+=======
+        Folds pulsar into nbins time bins after dedispersing it. 
+>>>>>>> e40949480d9914c26fbc775c22d71d035f837c33
         
         Parameters
         ----------
@@ -83,10 +100,10 @@ class PulsarPipeline:
         if kwargs.has_key('f_ref'): f_ref = kwargs['f_ref']
         else: f_ref = freq[0]
    
+<<<<<<< HEAD
         data = self.data[start_chan:end_chan, :, start_samp:end_samp].copy()
         for corr in range(36):
             data[:, corr, :] /= running_mean(data[:, corr, :])
-
         delays = self.dm_delays(dm, f_ref)[start_chan:end_chan, np.newaxis, np.newaxis] * np.ones([1, data.shape[1], data.shape[-1]])
         dedispersed_times = times[np.newaxis, np.newaxis, :] * np.ones([data.shape[0], data.shape[1], 1]) - delays
         
@@ -99,6 +116,19 @@ class PulsarPipeline:
                 bins_corr = bins[:, corr, :]
                 vals = data_corr[bins_corr==i]
                 profile[corr, i] += vals[vals!=0.0].mean()
+=======
+        data = self.data[start_chan:end_chan, start_samp:end_samp].copy()
+        data /= running_mean(data)
+        delays = self.dm_delays(dm, f_ref)[start_chan:end_chan].repeat(len(times)).reshape(data.shape)
+        dedispersed_times = times[np.newaxis, :] * np.ones([len(freq), 1]) - delays
+        
+        bins = (((dedispersed_times / p1) % 1) * nbins).astype(int)
+        profile = np.zeros([nbins], dtype=np.complex128)
+        
+        for i in range(nbins):
+            vals = data[bins==i]
+            profile[i] += vals[vals!=0.0].mean()
+>>>>>>> e40949480d9914c26fbc775c22d71d035f837c33
         
         return profile
     
@@ -113,17 +143,30 @@ class PulsarPipeline:
         ---------- 
         """
         data = self.data.copy()
+<<<<<<< HEAD
         data = data - np.mean(data, axis=-1)[:, :, np.newaxis]
         freq = (1e6 * self.freq)[:, np.newaxis, np.newaxis] # Frequency in Hz
         RA = (np.deg2rad(self.RA * np.cos(np.deg2rad(self.dec))))[np.newaxis, np.newaxis, :]
 
         print "Fringestopping object at (RA,DEC):", np.rad2deg(RA).mean(), self.dec
 
-        phase = np.exp(-2*np.pi * 1j * d_EW * freq / 3e8 * np.sin(RA))
+        phase = np.exp(2*np.pi * 1j * d_EW * freq / 3e8 * np.sin(RA))
 
-        self.data = data * phase    
+        self.data = data * phase
+    
+
+class RFI_Clean(PulsarAnalysis):
+=======
+        data = data - np.mean(data, axis=-1)[:, np.newaxis]
+        freq = 1e6 * self.freq # Frequency in Hz
+        RA = np.deg2rad(self.RA * np.cos(np.deg2rad(self.dec)))
+        print "Fringestopping object at (RA,DEC):", RA.mean(), self.dec
+        phase = np.exp(2*np.pi * 1j * d_EW * freq[:, np.newaxis] / 3e8 * np.sin(RA[np.newaxis, :]))
+        self.data = data * phase
+    
 
 class RFI_Clean(PulsarPipeline):
+>>>>>>> e40949480d9914c26fbc775c22d71d035f837c33
 
     always_cut = range(111,138) + range(889,893) + range(856,860) + \
         range(873,877) + range(583,600) + range(552,568) + range(630,645) +\
@@ -148,9 +191,14 @@ class RFI_Clean(PulsarPipeline):
 
         """
         data = abs(self.data.copy())
+<<<<<<< HEAD
         freq = (self.freq)[:, np.newaxis]
         data_freq = data.mean(axis=-1)
         data_freq_norm = data_freq / data_freq.mean() * freq**(4) / freq[-1]**4
+=======
+        data_freq = data.mean(axis=-1)
+        data_freq_norm = data_freq / data_freq.mean() * self.freq**(4) / self.freq[-1]**4
+>>>>>>> e40949480d9914c26fbc775c22d71d035f837c33
         mask = data_freq_norm > threshold
 
         self.data[np.where(mask)[0], :] = 0.0 
