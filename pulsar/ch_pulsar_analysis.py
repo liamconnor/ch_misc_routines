@@ -84,7 +84,8 @@ class PulsarPipeline:
         else: f_ref = freq[0]
    
         data = self.data[start_chan:end_chan, :, start_samp:end_samp].copy()
-        for corr in range(36):
+
+        for corr in range(self.ncorr):
             data[:, corr, :] /= running_mean(data[:, corr, :])
 
         delays = self.dm_delays(dm, f_ref)[start_chan:end_chan, np.newaxis, np.newaxis] * np.ones([1, data.shape[1], data.shape[-1]])

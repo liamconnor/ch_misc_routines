@@ -39,6 +39,8 @@ class PhaseAnalysis():
         self.data_lag = np.fft.fftshift(np.fft.fft(np.hanning(nfreq)[:, np.newaxis, np.newaxis]\
                                                       * self.on_pulse_data, axis=0), axes=0)
         data_lag_mean = abs(self.data_lag).mean(axis=-1)
+        
+        print "Getting each correlation's lag offset"
 
         lag_pixel = np.zeros([data.shape[1]])
         for corr in range(data.shape[1]):
@@ -69,7 +71,7 @@ class PhaseAnalysis():
         # divide by 100. so exponentials don't tempt numerical precision
         phi_arr = misc.gen_corr_matrix(lag_exp, self.n_feed)
         eval, evec = np.linalg.eigh(phi_arr)
-
+        print "Solving phase matrix"
         phi = eval[-1]**0.5 * evec[:, -1]
         lag_sol = np.angle(phi) * 100.0
 
@@ -92,4 +94,4 @@ class PhaseAnalysis():
 
         data_zerolag = data * np.exp(-2*np.pi*1j * self.lag_pixel[np.newaxis, :, np.newaxis] * np.fft.fftfreq(data.shape[0])[:, np.newaxis, np.newaxis])
         
-        return data_zerolag, #np.fft.fftshift(np.fft.fft(np.hanning(self.nfreq)[:, np.newaxis, np.newaxis] * data_zerolag, axis=0))
+        return data_zerolag, np.fft.fftshift(np.fft.fft(np.hanning(self.nfreq)[:, np.newaxis, np.newaxis] * data_zerolag, axis=0))

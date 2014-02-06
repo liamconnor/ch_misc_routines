@@ -41,6 +41,8 @@ print "Starting chunk %i of %i" % (jj+1, nchunks)
 print "Getting", file_chunk*jj, ":", file_chunk*(jj+1)
 
 data_arr, time_full, RA = misc.get_data(list[file_chunk*jj:file_chunk*(jj+1)])[1:]
+data_arr = data_arr[:, :10, :]
+ncorr = 10
 
 ntimes = len(time_full)
 
@@ -50,7 +52,7 @@ time_full = (fpga - fpga[0]) * 0.01000 / 3906.0
 time = time_full[jj * ntimes : (jj+1) * ntimes]
 
 time_int = 1000 # Integrate in time over time_int samples
-freq_int = 1 # Integrate over freq bins
+freq_int = 2 # Integrate over freq bins
 
 ntimes = len(time)
 
@@ -72,7 +74,7 @@ RC = chp.RFI_Clean(data_arr, time)
 RC.dec = dec
 RC.RA = RA
 RC.frequency_clean(threshold=1e6)
-RC.fringe_stop() 
+#RC.fringe_stop() 
 
 for freq in range(n_freq_bins):
     print "Folding freq %i" % freq 
@@ -97,50 +99,4 @@ for corr in range(ncorr):
         f.create_dataset('folded_arr', data=final_array) 
         f.create_dataset('times', data=time_full)
         f.close()
-
-"""
-=======
-folded_arr = np.zeros([n_freq_bins, n_time_bins, n_phase_bins], np.complex128)
-
-print "folded pulsar array has shape", folded_arr.shape
-
-corrs = range(36)
-autos = [0,8,15,21,26,30,33,35]
-
-for cc in autos:
-    corrs.remove(cc)
-
-corrs = [4,5,6,7,19,22,23,24,25,12]
-
->>>>>>> e40949480d9914c26fbc775c22d71d035f837c33
-print corrs
-for corr in corrs:
-    print "Correlation product %i" % corr
-
-    RC = chp.RFI_Clean((data_arr[:, corr, :]), time)
-    RC.dec = dec
-    RC.RA = RA
-    RC.frequency_clean()
-    RC.fringe_stop()
-
-    for freq in range(n_freq_bins):
-        for tt in range(n_time_bins):
-            folded_arr[freq, tt, :] = RC.fold_pulsar(p1, DM, nbins=n_phase_bins, \
-                        start_chan=freq_int*freq, end_chan=freq_int*(freq+1), \
-                        start_samp=time_int*tt, end_samp=time_int*(tt+1), f_ref=400.0)
-
-    fully = comm.gather(folded_arr, root=0)
-    print "Done gathering arrays"
-    if jj == 0:
-        final_array = np.concatenate(fully, axis=1)
-        outfile = outdir + 'abs_cross_fpga_mpi_psr_phase' + np.str(corr) + '.hdf5'
-        print "Writing folded array to", outfile, "with shape:", final_array.shape
-        f = h5py.File(outfile, 'w')
-        f.create_dataset('folded_arr', data=final_array) 
-        f.create_dataset('times', data=time)
-        f.close()
-<<<<<<< HEAD
-
-"""
-
 
