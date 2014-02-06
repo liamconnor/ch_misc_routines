@@ -7,7 +7,10 @@ class PhaseAnalysis():
         self.on_gate = on_gate
         self.n_feed = 8
         self.ncorr = self.n_feed * (self.n_feed + 1) / 2
+        self.nfreq = 1024
+        
         self.data_lag = None
+        self.lag_pixel = None
 
     def get_lag_pixel(self, data):
         """
@@ -40,6 +43,8 @@ class PhaseAnalysis():
         for corr in range(data.shape[1]):
             max_pixel = np.where(data_lag_mean[:, corr] == data_lag_mean[:, corr].max())[0][0] - nfreq/2.
             lag_pixel[corr] = max_pixel
+            
+        self.lag_pixel = lag_pixel
 
         return lag_pixel
 
@@ -68,5 +73,24 @@ class PhaseAnalysis():
         lag_sol = np.angle(phi) * 100.0
 
         return lag_sol
+        
+    def correct_lag(self, data_lag=self.data_lag):
+        """
+        Apply a phase correction using the lag offset to shift each correlation's lag to zero.
+        
+        Parameters
+        ----------
+        data_lag: complex arr
+                pulsar gate array with dimension (nlag, ncorr, ntimes)
+        
+        Returns
+        -------
+        the lag corrected inverse fourier transformed data array
+        """
+        data_zerolag = data_lag * np.exp(-2*pi*1j * self.lag_pixel[:, np.newaxis, :] * \
+            np.fft.fftfreq(data.shape[0])[:, np.newaxis, np.newaxis]
+        
+        return np.fft.ifft(np.hanning(self.nfreq)[:, np.newaxis, np.newaxis] * data_zerolag, axis=0)
+            
 
   
