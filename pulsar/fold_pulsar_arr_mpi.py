@@ -73,7 +73,7 @@ print "folded pulsar array has shape", folded_arr.shape
 RC = chp.RFI_Clean(data_arr, time)
 RC.dec = dec
 RC.RA = RA
-RC.frequency_clean(threshold=1e6)
+RC.frequency_clean(threshold=5)
 #RC.fringe_stop() 
 
 for freq in range(n_freq_bins):
@@ -92,7 +92,7 @@ for corr in range(ncorr):
         print "Done gathering arrays for corr", corr
         final_array = np.concatenate(folded_corr, axis=1)
         
-        outfile = outdir + 'B0329_Dec10_psr_phase' + np.str(len(list)) + np.str(corr) + '.hdf5'
+        outfile = outdir + 'B0329_Dec10_psr_phase' + np.str(len(list)) + np.str(corr) + 'no_runm.hdf5'
         print "Writing folded array to", outfile, "with shape:", final_array.shape
 
         f = h5py.File(outfile, 'w')
