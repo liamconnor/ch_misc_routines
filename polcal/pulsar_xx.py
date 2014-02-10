@@ -6,9 +6,8 @@ n_ant = 8
 nfreq = 1024
 ncorr = n_ant * (n_ant+1) / 2
 kl_max = 1
-print ncorr
 
-g = h5py.File('/Users/liamconnor/Desktop/CasA_transit_fringstop_rficlean.hdf5','r')
+g = h5py.File('/scratch/k/krs/connor/B0329_10dec13_ongate.hdf5','r')
 onegate_ = g['data'][:] # Should have shape (nfreq, ncorr, ntimes)
 print onegate_.shape
 
@@ -53,11 +52,10 @@ def get_eigenvectors(Data, N):
 
                 Gain_matXX[ant_j,ant_j,:] = 0 # Set autocorrelations to zero                                          
 
-    # Now try to find eigenvectors of n_ant x n_ant gain matrices in sdf and YY                                                                      
+    # Now try to find eigenvectors of n_ant x n_ant gain matrices                                                                      
     gain_approx_XX = np.zeros([n_ant, N], np.complex64)
 
     for k in range(N):
-    	print k
     	w_XX, v_XX = np.linalg.eigh(Gain_matXX[:, :, k], UPLO='U')
     	v_XX = v_XX[:, -1] / v_XX[0, -1]
     	gain_approx_XX[:, k] = w_XX[-1]**0.5 * v_XX / np.sqrt(abs(v_XX**2).sum())
