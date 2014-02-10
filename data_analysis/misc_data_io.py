@@ -37,8 +37,7 @@ def gen_corr_matrix(data, n_feed):
     corr_mat = np.zeros((n_feed, n_feed), np.complex128)
 
     for feed_i in range(n_feed):
-        for feed_j in range(n_feed):
-            if feed_i < feed_j:
+        for feed_j in range(feed_i, n_feed):
                 corr_mat[feed_i, feed_j] = data[feed_map(feed_i, feed_j, n_feed)]
                 corr_mat[feed_j, feed_i] = np.conj(data[feed_map(feed_i, feed_j, n_feed)])
     

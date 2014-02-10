@@ -15,6 +15,7 @@ p1 = 0.7145817552986237 # B0329 period
 dec = 54.57876944444
 
 ncorr = 36
+<<<<<<< HEAD
 nnodes = 64
 file_chunk = 8
 
@@ -24,6 +25,16 @@ outname = 'B0329_10Dec2013'
 list = glob.glob('/scratch/k/krs/connor/chime/chime_data/20131210T060233Z/20131210T060233Z.h5.*')
 #list = glob.glob('/scratch/k/krs/jrs65/chime_data/chimeacq2/20131210T060221Z/2013*.h5.*') 
 #list = glob.glob('/scratch/k/krs/connor/chime/chime_data/valhalla/20140210T021023Z.h5*')
+=======
+nnodes = 60
+file_chunk = 4
+
+outdir = '/scratch/k/krs/connor/'
+outname = 'B0329_9Feb2014_test'
+#list = glob.glob('/scratch/k/krs/connor/chime/chime_data/20131210T060233Z/20131210T060233Z.h5.*')
+#list = glob.glob('/scratch/k/krs/jrs65/chime_data/chimeacq2/20131210T060221Z/2013*.h5.*') 
+list = glob.glob('/scratch/k/krs/connor/chime/chime_data/valhalla/20140210T021023Z.h5*')
+>>>>>>> ad5a0babfcd8fd1f2055471b9dcbb9b47fa8773d
 list.sort()
 list = list[:file_chunk * nnodes]
 
@@ -43,7 +54,11 @@ ntimes = len(time_full)
 time = time_full
 
 time_int = 1000 # Integrate in time over time_int samples
+<<<<<<< HEAD
 freq_int = 1 # Integrate over freq bins
+=======
+freq_int = 256 # Integrate over freq bins
+>>>>>>> ad5a0babfcd8fd1f2055471b9dcbb9b47fa8773d
 
 ntimes = len(time)
 
@@ -79,15 +94,26 @@ final_list = []
 
 for corr in range(ncorr):
 
+<<<<<<< HEAD
     folded_corr = comm.gather(folded_arr[:, np.newaxis, corr, :, :], root=0)
     if jj == 0:
         print "Done gathering arrays for corr", corr
         final_list.append(np.concatenate(folded_corr, axis=2))
+=======
+    folded_corr = comm.gather(folded_arr[:, corr, :, :], root=0)
+    if jj == 0:
+        print "Done gathering arrays for corr", corr
+        final_list.append(np.concatenate(folded_corr[:, np.newaxis, :, :], axis=2))
+>>>>>>> ad5a0babfcd8fd1f2055471b9dcbb9b47fa8773d
 
 if jj==0:
     print len(final_list), final_list[0].shape
     final_array = np.concatenate(final_list, axis=1)
+<<<<<<< HEAD
     outfile = outdir + outname + '.hdf5'
+=======
+    outfile = outdir + outname + np.str(len(list)) + np.str(corr) + '.hdf5'
+>>>>>>> ad5a0babfcd8fd1f2055471b9dcbb9b47fa8773d
     print "Writing folded array to", outfile, "with shape:", final_array.shape
 
     f = h5py.File(outfile, 'w')
