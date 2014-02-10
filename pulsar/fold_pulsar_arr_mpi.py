@@ -15,14 +15,15 @@ p1 = 0.7145817552986237 # B0329 period
 dec = 54.57876944444
 
 ncorr = 36
-nnodes = 60
-file_chunk = 4
+nnodes = 64
+file_chunk = 8
 
 outdir = '/scratch/k/krs/connor/'
-outname = 'B0329_9Feb2014_test'
-#list = glob.glob('/scratch/k/krs/connor/chime/chime_data/20131210T060233Z/20131210T060233Z.h5.*')
+#outname = 'B0329_9Feb2014_test'
+outname = 'B0329_10Dec2013'
+list = glob.glob('/scratch/k/krs/connor/chime/chime_data/20131210T060233Z/20131210T060233Z.h5.*')
 #list = glob.glob('/scratch/k/krs/jrs65/chime_data/chimeacq2/20131210T060221Z/2013*.h5.*') 
-list = glob.glob('/scratch/k/krs/connor/chime/chime_data/valhalla/20140210T021023Z.h5*')
+#list = glob.glob('/scratch/k/krs/connor/chime/chime_data/valhalla/20140210T021023Z.h5*')
 list.sort()
 list = list[:file_chunk * nnodes]
 
@@ -42,7 +43,7 @@ ntimes = len(time_full)
 time = time_full
 
 time_int = 1000 # Integrate in time over time_int samples
-freq_int = 256 # Integrate over freq bins
+freq_int = 1 # Integrate over freq bins
 
 ntimes = len(time)
 
@@ -78,15 +79,15 @@ final_list = []
 
 for corr in range(ncorr):
 
-    folded_corr = comm.gather(folded_arr[:, corr, :, :], root=0)
+    folded_corr = comm.gather(folded_arr[:, np.newaxis, corr, :, :], root=0)
     if jj == 0:
         print "Done gathering arrays for corr", corr
-        final_list.append(np.concatenate(folded_corr[:, np.newaxis, :, :], axis=2))
+        final_list.append(np.concatenate(folded_corr, axis=2))
 
 if jj==0:
     print len(final_list), final_list[0].shape
     final_array = np.concatenate(final_list, axis=1)
-    outfile = outdir + outname + np.str(len(list)) + np.str(corr) + '.hdf5'
+    outfile = outdir + outname + '.hdf5'
     print "Writing folded array to", outfile, "with shape:", final_array.shape
 
     f = h5py.File(outfile, 'w')
