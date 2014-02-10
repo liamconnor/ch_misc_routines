@@ -2,7 +2,10 @@ import numpy as np
 import ch_pulsar_analysis as chp
 import h5py
 import misc_data_io as misc
+
 import glob
+import argparse
+
 
 from mpi4py import MPI
 comm = MPI.COMM_WORLD
@@ -10,19 +13,24 @@ print comm.rank, comm.size
 
 DM = 26.833 # B0329 dispersion measure
 p1 = 0.7145817552986237 # B0329 period
-#p1 = 0.71457950245055065
-
 dec = 54.57876944444
 
-ncorr = 36
-nnodes = 60
-file_chunk = 4
+nnodes = 64
+file_chunk = 8
+
+parser = argparse.ArgumentParser(description="This script RFI-cleans, fringestops, and folds the pulsar data.")
+parser.add_argument("data_dir", help="Directory with hdf5 data files")
+parser.add_argument("out_file_name", help="Directory with hdf5 data files")
+parser.add_argument("--nbins", help="Celestial objects to fit", default=64)
+parser.add_argument("--time_int", help="Celestial objects to fit", default=1000)
+parser.add_argument("--freq_int", help="Celestial objects to fit", default=1)
+parser.add_argument("--ncorr", help="Number of correlation products to include", default=36)
+args = parser.parse_args()
+
+ncorr = args.ncorr
 
 outdir = '/scratch/k/krs/connor/'
-outname = 'B0329_9Feb2014_test'
-#list = glob.glob('/scratch/k/krs/connor/chime/chime_data/20131210T060233Z/20131210T060233Z.h5.*')
-#list = glob.glob('/scratch/k/krs/jrs65/chime_data/chimeacq2/20131210T060221Z/2013*.h5.*') 
-list = glob.glob('/scratch/k/krs/connor/chime/chime_data/valhalla/20140210T021023Z.h5*')
+list = glob.glob(args.data_dir)
 list.sort()
 list = list[:file_chunk * nnodes]
 
@@ -36,21 +44,25 @@ print "Starting chunk %i of %i" % (jj+1, nchunks)
 print "Getting", file_chunk*jj, ":", file_chunk*(jj+1)
 
 data_arr, time_full, RA = misc.get_data(list[file_chunk*jj:file_chunk*(jj+1)])[1:]
-data_arr = data_arr[:, :ncorr, :]
+data_arr = data_arr[:, :10, :]
+
 
 ntimes = len(time_full)
-time = time_full
 
-time_int = 1000 # Integrate in time over time_int samples
-freq_int = 256 # Integrate over freq bins
+g = h5py.File('/scratch/k/krs/connor/psr_fpga.hdf5','r')
+fpga = g['fpga'][:]
+time_full = (fpga - fpga[0]) * 0.01000 / 3906.0
+time = time_full[jj * ntimes : (jj+1) * ntimes]
+
+time_int = args.time_int
+freq_int = args.freq_int
 
 ntimes = len(time)
 
-"""g = h5py.File('/scratch/k/krs/connor/psr_fpga.hdf5','r')
+g = h5py.File('/scratch/k/krs/connor/psr_fpga.hdf5','r')
 fpga = g['fpga'][:]
 times = (fpga - fpga[0]) * 0.01000 / 3906.0
 time = times[jj * ntimes : (jj+1) * ntimes]
-"""
 
 n_freq_bins = np.round( data_arr.shape[0] / freq_int )
 n_time_bins = np.round( data_arr.shape[-1] / time_int )
@@ -77,20 +89,17 @@ fullie = []
 final_list = []
 
 for corr in range(ncorr):
-
+    
     folded_corr = comm.gather(folded_arr[:, corr, :, :], root=0)
     if jj == 0:
         print "Done gathering arrays for corr", corr
-        final_list.append(np.concatenate(folded_corr[:, np.newaxis, :, :], axis=2))
+        final_array = np.concatenate(folded_corr, axis=1)
+        
+        outfile = outdir + 'B0329_Dec10_psr_phase' + np.str(len(list)) + np.str(corr) + args.out_file_name
+        print "Writing folded array to", outfile, "with shape:", final_array.shape
 
-if jj==0:
-    print len(final_list), final_list[0].shape
-    final_array = np.concatenate(final_list, axis=1)
-    outfile = outdir + outname + np.str(len(list)) + np.str(corr) + '.hdf5'
-    print "Writing folded array to", outfile, "with shape:", final_array.shape
-
-    f = h5py.File(outfile, 'w')
-    f.create_dataset('folded_arr', data=final_array) 
-#   f.create_dataset('times', data=time_full)
-    f.close()
+        f = h5py.File(outfile, 'w')
+        f.create_dataset('folded_arr', data=final_array) 
+        f.create_dataset('times', data=time_full)
+        f.close()
 
