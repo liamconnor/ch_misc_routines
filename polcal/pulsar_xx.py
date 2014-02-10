@@ -35,10 +35,9 @@ def antmap(i,j,n):
         return ((2*n*i - i**2 + i) / 2) + (j-i)
 
 def get_eigenvectors(Data, N):
-    """                                                                                                                                    
-	Function to get eigenvectors in XX and YY for each time or frequency
-	
-	====params====
+    """ Function to get eigenvectors in XX and YY for each time or frequency
+    
+    ====params====
     Data:
     	File with pulsar visibilites                                                                                                    
     N:
