@@ -6,10 +6,10 @@ import misc_data_io as misc
 import glob
 import argparse
 
-
 from mpi4py import MPI
 comm = MPI.COMM_WORLD
 print comm.rank, comm.size
+
 
 DM = 26.833 # B0329 dispersion measure
 p1 = 0.7145817552986237 # B0329 period
@@ -30,7 +30,7 @@ args = parser.parse_args()
 ncorr = args.ncorr
 
 outdir = '/scratch/k/krs/connor/'
-list = glob.glob(args.data_dir)
+list = glob.glob(args.data_dir + '/*h5*')
 list.sort()
 list = list[:file_chunk * nnodes]
 

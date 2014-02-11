@@ -3,6 +3,7 @@ import ch_pulsar_analysis as chp
 import h5py
 import misc_data_io as misc
 import glob
+import os
 
 from mpi4py import MPI
 comm = MPI.COMM_WORLD
@@ -14,20 +15,23 @@ p1 = 0.7145817552986237 # B0329 period
 
 dec = 54.57876944444
 
-ncorr = 36
 nnodes = 64
 file_chunk = 8
 
-outdir = '/scratch/k/krs/connor/'
-#outname = 'B0329_9Feb2014_test_nofs'
-outname = 'B0329_10Dec2013_nofs'
-#outname = 'B0329_10Feb2014'
+outdir = '/scratch/k/krs/connor/pulsar_analysis/'
 
-list = glob.glob('/scratch/k/krs/connor/chime/chime_data/20131210T060233Z/20131210T060233Z.h5.*')
-#list = glob.glob('/scratch/k/krs/jrs65/chime_data/chimeacq2/20131210T060221Z/2013*.h5.*') 
-#list = glob.glob('/scratch/k/krs/connor/chime/chime_data/valhalla/20140210T021023Z.h5*')
-#list = glob.glob('/scratch/k/krs/connor/chime/chime_data/valhalla/20140211T020307Z.h5*')
+parser = argparse.ArgumentParser(description="This script RFI-cleans, fringestops, and folds the pulsar data.")
+parser.add_argument("data_dir", help="Directory with hdf5 data files")
+parser.add_argument("--n_phase_bins", help="Number of pulsar gates with which to fold", default=64)
+parser.add_argument("--time_int", help="Number of samples to integrate over", default=1000)
+parser.add_argument("--freq_int", help="Number of frequencies to integrate over", default=1)
+parser.add_argument("--ncorr", help="Number of correlations to include", default=36)
+args = parser.parse_args()
 
+ncorr = args.ncorr
+dat_name = args.data_dir[-16:]
+
+list = glob.glob(args.data_dir + '/*h5')
 list.sort()
 list = list[:file_chunk * nnodes]
 
@@ -46,21 +50,19 @@ data_arr = data_arr[:, :ncorr, :]
 ntimes = len(time_full)
 time = time_full
 
-time_int = 1000 # Integrate in time over time_int samples
-freq_int = 1 # Integrate over freq bins
+time_int = args.time_int
+freq_int = args.freq_int 
 
-
-g = h5py.File('/scratch/k/krs/connor/psr_fpga.hdf5','r')
+"""g = h5py.File('/scratch/k/krs/connor/psr_fpga.hdf5','r')
 fpga = g['fpga'][:]
 times = (fpga - fpga[0]) * 0.01000 / 3906.0
 time = times[jj * ntimes : (jj+1) * ntimes]
-
+"""
 
 n_freq_bins = np.round( data_arr.shape[0] / freq_int )
 n_time_bins = np.round( data_arr.shape[-1] / time_int )
-n_phase_bins = 64
+n_phase_bins = args.n_phase_bins
     
-
 folded_arr = np.zeros([n_freq_bins, ncorr, n_time_bins, n_phase_bins], np.complex128)
 
 print "folded pulsar array has shape", folded_arr.shape
@@ -80,6 +82,11 @@ for freq in range(n_freq_bins):
 fullie = []
 final_list = []
 
+if os.path.isdir(outdir + dat_name):
+    pass
+else
+    os.mkdir(outdir + dat_name)
+
 for corr in range(ncorr):
 
     folded_corr = comm.gather(folded_arr[:, np.newaxis, corr, :, :], root=0)
@@ -90,7 +97,7 @@ for corr in range(ncorr):
 if jj==0:
     print len(final_list), final_list[0].shape
     final_array = np.concatenate(final_list, axis=1)
-    outfile = outdir + outname + '.hdf5'
+    outfile = outdir + dat_name + '/' + dat_name + 'folded_array.hdf5'
     print "Writing folded array to", outfile, "with shape:", final_array.shape
 
     f = h5py.File(outfile, 'w')

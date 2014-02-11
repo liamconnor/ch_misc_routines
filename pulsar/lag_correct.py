@@ -45,6 +45,7 @@ class PhaseAnalysis():
         lag_pixel = np.zeros([data.shape[1]])
         for corr in range(data.shape[1]):
             max_pixel = np.where(data_lag_mean[:, corr] == data_lag_mean[:, corr].max())[0][0] - nfreq/2.
+            print max_pixel
             lag_pixel[corr] = max_pixel
             
         self.lag_pixel = lag_pixel
