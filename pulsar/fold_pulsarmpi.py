@@ -22,11 +22,15 @@ outdir = '/scratch/k/krs/connor/pulsar_analysis/'
 
 parser = argparse.ArgumentParser(description="This script RFI-cleans, fringestops, and folds the pulsar data.")
 parser.add_argument("data_dir", help="Directory with hdf5 data files")
+parser.add_argument("pulsar", help="Name of pulsar e.g. B0329")
 parser.add_argument("--n_phase_bins", help="Number of pulsar gates with which to fold", default=64)
 parser.add_argument("--time_int", help="Number of samples to integrate over", default=1000)
 parser.add_argument("--freq_int", help="Number of frequencies to integrate over", default=1)
 parser.add_argument("--ncorr", help="Number of correlations to include", default=36)
 args = parser.parse_args()
+
+sources = np.loadtxt('sources.txt', dtype=str)[1:]
+sources[sources[0]=='B0329']
 
 ncorr = args.ncorr
 dat_name = args.data_dir[-16:]
