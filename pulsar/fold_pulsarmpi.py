@@ -10,8 +10,8 @@ from mpi4py import MPI
 comm = MPI.COMM_WORLD
 print comm.rank, comm.size
 
-nnodes = 16
-file_chunk = 4
+nnodes = 62
+file_chunk = 10 
 
 outdir = '/scratch/k/krs/connor/chime/calibration/'
 
