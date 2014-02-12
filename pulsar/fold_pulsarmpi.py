@@ -13,7 +13,7 @@ print comm.rank, comm.size
 nnodes = 16
 file_chunk = 4
 
-outdir = '/scratch/k/krs/connor/pulsar_analysis/calibration/'
+outdir = '/scratch/k/krs/connor/chime/calibration/'
 
 parser = argparse.ArgumentParser(description="This script RFI-cleans, fringestops, and folds the pulsar data.")
 parser.add_argument("data_dir", help="Directory with hdf5 data files")
