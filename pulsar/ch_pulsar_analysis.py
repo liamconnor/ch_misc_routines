@@ -5,9 +5,6 @@ import h5py
 import misc_data_io as misc
 
 
-DM = 26.833 # B0329 dispersion measure
-p1 = 0.7145817552986237 # B0329 period
-
 class PulsarPipeline:
 
 
@@ -130,7 +127,7 @@ class RFI_Clean(PulsarPipeline):
         range(873,877) + range(583,600) + range(552,568) + range(630,645) +\
         range(678,690) + range(753, 768) + range(783, 798)
     
-    def frequency_clean(self, threshold=1):
+    def frequency_clean(self, threshold=1e6):
         """
         Does an RFI cut in frequency by normalizing by nu**4 to flatten bandpass and then cutting 
         above some threshold. 

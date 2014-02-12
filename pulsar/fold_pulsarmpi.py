@@ -30,7 +30,7 @@ parser.add_argument("--ncorr", help="Number of correlations to include", default
 args = parser.parse_args()
 
 sources = np.loadtxt('sources.txt', dtype=str)[1:]
-sources[sources[0]=='B0329']
+dec = np.float(sources[sources[0]==args.pulsar][0][2])
 
 ncorr = args.ncorr
 dat_name = args.data_dir[-16:]
