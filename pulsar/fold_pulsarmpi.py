@@ -1,4 +1,4 @@
-import numpy as np
+1;2501;0cimport numpy as np
 import ch_pulsar_analysis as chp
 import h5py
 import misc_data_io as misc
@@ -13,7 +13,7 @@ print comm.rank, comm.size
 nnodes = 16
 file_chunk = 4
 
-outdir = '/scratch/k/krs/connor/pulsar_analysis/'
+outdir = '/scratch/k/krs/connor/pulsar_analysis/calibration/'
 
 parser = argparse.ArgumentParser(description="This script RFI-cleans, fringestops, and folds the pulsar data.")
 parser.add_argument("data_dir", help="Directory with hdf5 data files")
@@ -95,9 +95,8 @@ for corr in range(ncorr):
         final_list.append(np.concatenate(folded_corr, axis=2))
 
 if jj==0:
-    print len(final_list), final_list[0].shape
     final_array = np.concatenate(final_list, axis=1)
-    outfile = outdir + dat_name + '/' + dat_name + 'folded_array.hdf5'
+    outfile = outdir + dat_name + '/' + dat_name + '.' + args.pulsar + '.allgate.hdf5'
     print "Writing folded array to", outfile, "with shape:", final_array.shape
 
     f = h5py.File(outfile, 'w')
