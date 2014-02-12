@@ -10,7 +10,6 @@ print comm.rank, comm.size
 
 DM = 26.833 # B0329 dispersion measure
 p1 = 0.7145817552986237 # B0329 period
-#p1 = 0.71457950245055065
 
 dec = 54.57876944444
 
