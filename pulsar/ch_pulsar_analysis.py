@@ -87,7 +87,7 @@ class PulsarPipeline:
         delays = self.dm_delays(dm, f_ref)[start_chan:end_chan, np.newaxis, np.newaxis] * np.ones([1, data.shape[1], data.shape[-1]])
         dedispersed_times = times[np.newaxis, np.newaxis, :] * np.ones([data.shape[0], data.shape[1], 1]) - delays
         
-        bins = (((dedispersed_times / p1) % 1) * nbins).astype(int)
+        bins = (((dedispersed_times / p0) % 1) * nbins).astype(int)
         profile = np.zeros([data.shape[1], nbins], dtype=np.complex128)
         
         for corr in range(self.ncorr):

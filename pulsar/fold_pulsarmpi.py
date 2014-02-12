@@ -4,19 +4,14 @@ import h5py
 import misc_data_io as misc
 import glob
 import os
+import argparse
 
 from mpi4py import MPI
 comm = MPI.COMM_WORLD
 print comm.rank, comm.size
 
-DM = 26.833 # B0329 dispersion measure
-p1 = 0.7145817552986237 # B0329 period
-#p1 = 0.71457950245055065
-
-dec = 54.57876944444
-
-nnodes = 64
-file_chunk = 8
+nnodes = 16
+file_chunk = 4
 
 outdir = '/scratch/k/krs/connor/pulsar_analysis/'
 
@@ -30,12 +25,13 @@ parser.add_argument("--ncorr", help="Number of correlations to include", default
 args = parser.parse_args()
 
 sources = np.loadtxt('sources.txt', dtype=str)[1:]
-dec = np.float(sources[sources[0]==args.pulsar][0][2])
-
+dec, DM, p1 = np.float(sources[sources[0]==args.pulsar][0][2])\
+    np.float(sources[sources[0]==args.pulsar][0][3]), \
+    np.float(sources[sources[0]==args.pulsar][0][4])
 ncorr = args.ncorr
 dat_name = args.data_dir[-16:]
 
-list = glob.glob(args.data_dir + '/*h5')
+list = glob.glob(args.data_dir + '/*h5*')
 list.sort()
 list = list[:file_chunk * nnodes]
 
@@ -88,7 +84,7 @@ final_list = []
 
 if os.path.isdir(outdir + dat_name):
     pass
-else
+else:
     os.mkdir(outdir + dat_name)
 
 for corr in range(ncorr):
