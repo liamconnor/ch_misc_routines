@@ -82,7 +82,8 @@ class PulsarPipeline:
         data = self.data[start_chan:end_chan, :, start_samp:end_samp].copy()
 
         for corr in range(self.ncorr):
-            data[:, corr, :] /= running_mean(data[:, corr, :])
+            #data[:, corr, :] /= running_mean(data[:, corr, :])
+            data[:, corr, :] /= (abs(data[:,corr]).mean(axis=-1)[:, np.newaxis] / freq[:, np.newaxis]**(-0.8))
 
         delays = self.dm_delays(dm, f_ref)[start_chan:end_chan, np.newaxis, np.newaxis] * np.ones([1, data.shape[1], data.shape[-1]])
         dedispersed_times = times[np.newaxis, np.newaxis, :] * np.ones([data.shape[0], data.shape[1], 1]) - delays
@@ -117,8 +118,7 @@ class PulsarPipeline:
         print "Fringestopping object at (RA,DEC):", np.rad2deg(RA).mean(), self.dec
 
         phase = np.exp(-2*np.pi * 1j * self.d_EW * freq / 3e8 * np.sin(RA))
-        print phase[:, 0].sum()
-        print phase[:, 8].sum()
+        
         self.data = data * phase    
 
 class RFI_Clean(PulsarPipeline):
