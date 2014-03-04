@@ -94,4 +94,4 @@ class PhaseAnalysis():
 
         data_zerolag = data * np.exp(-2*np.pi*1j * self.lag_pixel[np.newaxis, :, np.newaxis] * np.fft.fftfreq(data.shape[0])[:, np.newaxis, np.newaxis])
         
-        return data_zerolag, np.fft.fftshift(np.fft.fft(np.hanning(self.nfreq)[:, np.newaxis, np.newaxis] * data_zerolag, axis=0))
+        return data_zerolag, np.fft.fftshift(np.fft.fft(np.hanning(data.shape[0])[:, np.newaxis, np.newaxis] * data_zerolag, axis=0))

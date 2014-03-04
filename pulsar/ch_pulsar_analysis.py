@@ -4,6 +4,7 @@ import os
 import h5py
 import misc_data_io as misc
 
+chime_lat = 49.5
 
 class PulsarPipeline:
 
@@ -25,12 +26,18 @@ class PulsarPipeline:
 
         self.ntimes = self.data.shape[-1]
         self.ncorr = self.data.shape[1]
-        self.d_EW = (np.loadtxt('/home/k/krs/connor/code/ch_misc_routines/pulsar/east_west_baseline.txt'))[np.newaxis, :self.ncorr, np.newaxis]
+        self.baselines = np.loadtxt('/home/k/krs/connor/code/ch_misc_routines/pulsar/baselines_config22.txt')
+        self.d_EW = self.baselines[0]
+        self.d_NS = self.baselines[1]
         print "Data array has shape:", self.data.shape
         
         self.RA = None
         self.dec = None
 
+        self.u = self.d_EW * self.freq[:, np.newaxis] * 1e6 / (3e8)
+        self.v = self.d_NS * self.freq[:, np.newaxis] * 1e6 / (3e8)
+        print self.u.shape, self.v.shape
+        
     def dm_delays(self, dm, f_ref):
         """
         Provides dispersion delays as a function of frequency. 
@@ -120,6 +127,47 @@ class PulsarPipeline:
         phase = np.exp(-2*np.pi * 1j * self.d_EW * freq / 3e8 * np.sin(RA))
         
         self.data = data * phase    
+
+    def fringestop(self):
+        data = self.data.copy()
+        data = data - np.mean(data, axis=-1)[:, :, np.newaxis]
+        ha = self.RA
+        dec = np.deg2rad(self.dec)
+        
+        print "before", ha, dec
+        phase = self.fringestop_phase(ha, chime_lat, dec, self.u, self.v)
+        self.data = data * phase[:, :, np.newaxis]
+
+    def fringestop_phase(self, ha, lat, dec, u, v):
+        """Return the phase required to fringestop.
+
+        Parameter
+        ---------
+        ha : array_like
+        The Hour Angle of the source to fringestop too.
+        lat : array_like
+        The latitude of the observatory.
+        dec : array_like
+        The declination of the source.
+        u : array_like
+        The EW separation in wavelengths (increases to the E)
+        v : array_like
+        The NS separation in wavelengths (increases to the N)
+        
+        Returns
+        -------
+        phase : np.ndarray
+        The phase required to *correct* the fringeing. Shape is
+        given by the broadcast of the arguments together.
+        """
+        
+        uhdotn = np.cos(dec) * np.sin(-ha)
+        vhdotn = np.cos(lat) * np.sin(dec) - np.sin(lat) * np.cos(dec) * np.cos(-ha)
+        print "ha, dec %f %f" % (ha, dec)
+        phase = uhdotn * u + vhdotn * v
+
+        return np.exp(2.0J * np.pi * phase)
+    
 
 class RFI_Clean(PulsarPipeline):
 

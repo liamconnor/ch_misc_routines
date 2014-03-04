@@ -10,8 +10,8 @@ from mpi4py import MPI
 comm = MPI.COMM_WORLD
 print comm.rank, comm.size
 
-nnodes = 62
-file_chunk = 10 
+nnodes = 64
+file_chunk = 4
 
 outdir = '/scratch/k/krs/connor/chime/calibration/'
 
@@ -68,9 +68,10 @@ print "folded pulsar array has shape", folded_arr.shape
 
 RC = chp.RFI_Clean(data_arr, time)
 RC.dec = dec
-RC.RA = RA
+RC.RA = (3 + 34/60. + 3.99/3600.0)/24.*2*np.pi
 RC.frequency_clean(threshold=1e6)
-RC.fringe_stop() 
+print "These are the radec", RC.RA, RC.dec
+RC.fringestop() 
 
 for freq in range(n_freq_bins):
     print "Folding freq %i" % freq 
@@ -95,7 +96,7 @@ for corr in range(ncorr):
 
 if jj==0:
     final_array = np.concatenate(final_list, axis=1)
-    outfile = outdir + dat_name + '/' + dat_name + '.' + args.pulsar + '.allgate.test.hdf5'
+    outfile = outdir + dat_name + '/' + dat_name + '.' + args.pulsar + '.allgate.norm.nofs.hdf5'
     print "Writing folded array to", outfile, "with shape:", final_array.shape
 
     f = h5py.File(outfile, 'w')
