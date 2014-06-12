@@ -11,7 +11,7 @@ comm = MPI.COMM_WORLD
 print comm.rank, comm.size
 
 nnodes = 60
-file_chunk = 1
+file_chunk = 10
 
 outdir = '/scratch/k/krs/connor/chime/calibration/'
 
@@ -37,9 +37,7 @@ dat_name = args.data_dir[-16:]
 
 list = glob.glob(args.data_dir + '/*h5*')
 list.sort()
-print len(list)
-list = list[100:100 + file_chunk * nnodes]
-
+list = list[0:0 + file_chunk * nnodes]
 
 nchunks = len(list) / file_chunk
 

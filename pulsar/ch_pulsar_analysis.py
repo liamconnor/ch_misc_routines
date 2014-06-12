@@ -102,30 +102,18 @@ class PulsarPipeline:
         dedispersed_times = times[np.newaxis, np.newaxis, :] * np.ones([data.shape[0], data.shape[1], 1]) - delays
 
         bins = (((dedispersed_times / p0) % 1) * nbins).astype(int)
-        profile = np.zeros([data.shape[1], data.shape[2], nbins], dtype=np.complex128)
-        """
+        profile = np.zeros([data.shape[1], nbins], dtype=np.complex128)
+        
         for corr in range(self.ncorr):
             for i in range(nbins):
                 data_corr = data[:, corr, :]
                 bins_corr = bins[:, corr, :]
                 vals = data_corr[bins_corr==i]
                 profile[corr, i] += vals[vals!=0.0].mean()
-        """ 
-        print "nbins",nbins
-        for corr in range(self.ncorr): 
-            for tt in range(data.shape[2]):
-                data_corr = data[:, corr]
-                print bins.shape, data_corr.shape
-                print np.bincount(bins[:, corr], weights=data_corr.real)
-                vals_real = np.bincount(bins[:, corr], weights=data_corr[tt].real, minlength=nbins)
-                vals_imag = np.bincount(bins[:, corr], weights=data_corr[tt].imag, minlength=nbins)
-                
-                profile[corr, tt] = (vals_real + 1j * vals_imag)
-
-
-        return profile.mean(axis=1)
+        
+        return profile#.mean(axis=1)
     
-    def fold2(self, p0, dm, nbins=32, time_rebin=1000, freq_rebin=32, **kwargs):
+    def fold2(self, p0, dm, nbins=32, time_rebin=1000, freq_rebin=1, **kwargs):
 
         if kwargs.has_key('start_chan'): start_chan = kwargs['start_chan']
         else: start_chan = 0
@@ -144,8 +132,8 @@ class PulsarPipeline:
 
         data = self.data.copy()
         
-        delays = self.dm_delays(dm, f_ref)[start_chan:end_chan, np.newaxis, np.newaxis] * np.ones([1, data.shape[1], data.shape[-1]])
-        delays = self.dm_delays(dm, f_ref)
+        #delays = self.dm_delays(dm, f_ref)[start_chan:end_chan, np.newaxis, np.newaxis] * np.ones([1, data.shape[1], data.shape[-1]])
+        delays = self.dm_delays(dm, f_ref)[start_chan:end_chan]
 
         tstamps_all = self.time_stamps[:(nt * time_rebin)].reshape(nt, time_rebin)
         dset = data[:,:,:(nt * time_rebin)].reshape(self.nfreq, self.ncorr, nt, -1)
