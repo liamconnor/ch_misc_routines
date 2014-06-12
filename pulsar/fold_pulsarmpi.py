@@ -85,7 +85,7 @@ print "Getting", file_chunk*jj, ":", file_chunk*(jj+1)
 ]
 """
 #corrs = [0, 16, 7, 45, 91]
-corrs = [58, 57, 45, 91]
+corrs = [57, 45, 91]
 
 data_arr, time_full, RA, fpga_count = misc.get_data(list[file_chunk*jj:file_chunk*(jj+1)])[1:]
 data_arr = data_arr[:, corrs, :]
