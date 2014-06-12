@@ -42,6 +42,7 @@ def diff(p, x, Data):
 def run_fit(Arr, freq, RA, correlation=0):
     
     Data = abs(Arr[freq, correlation, :])
+    
     x = RA
 
     A = Data.max() - Data.min()
@@ -84,6 +85,9 @@ def beam_fit(Data, RA, dec=0, correlations="autos"):
     else:
         print "Error: Need proper set of correlations"
     
+    correlations=[7, 22, 36]#, 61, 72, 82, 51, 52, 53, 55, 56, 57]
+    #correlations=[0, 16, 31]
+
     beam_fit = np.zeros([Data.shape[0], Data.shape[1], 5])
 
     print "Number of frequencies:", n_freq

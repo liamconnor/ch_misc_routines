@@ -3,12 +3,16 @@ from numpy import linalg
 import h5py
 
 n_ant = 8
-nfreq = 1024
+nfreq = 32
 ncorr = n_ant * (n_ant+1) / 2
 kl_max = 1
 
-g = h5py.File('/scratch/k/krs/connor/B0329_10dec13_ongate.hdf5','r')
-onegate_ = g['data'][:] # Should have shape (nfreq, ncorr, ntimes)
+g = h5py.File('/scratch/k/krs/connor/chime/calibration/20140212T014603Z/20140212T014603Z.B0329.onegate.hdf5','r')
+#g = h5py.File('/scratch/k/krs/connor/chime/calibration/20131210T060233Z/20131210T060233Z.B0329.onegate.hdf5','r')
+onegate_ = g['data_zerolag'][:] # Should have shape (nfreq, ncorr, ntimes)
+print onegate_.shape
+onegate_ = onegate_.reshape(32, 16, ncorr, -1, 2).mean(axis=1).mean(axis=-1)
+
 print onegate_.shape
 
 onegate = np.transpose(onegate_, (1,2,0)) # Should be ordered (ncorr, ntime, nfreq)                                        
@@ -85,7 +89,6 @@ onegate_time = cmedian(onegate, 1) # Take time cmedian to get bandpass calibrati
 
 g_freq = get_eigenvectors(onegate_time, nfreq)
 g_freq[ g_freq!=g_freq ] = 0.0
-#A = get_eigenvectors(onegate_time, nfreq)
 
 print "%f NaNs" % np.isnan(g_freq).sum()
 print 'Solving freq eigenvectors'
@@ -120,7 +123,7 @@ print "Done with Eigenstuff!"
 gain = g_time[:,np.newaxis,:] * np.conj(g_freq[:,:,np.newaxis])
 
 model = G_freq[:, np.newaxis, :] * G_time[:, :, np.newaxis]
-model = model.reshape(ncorr, nfreq, ntimes)
+#model = model.reshape(ncorr, nfreq, ntimes)
 
 print "getting model"
 
@@ -131,7 +134,7 @@ modelcal = (G_freq * np.conj(G_freq))[np.newaxis,:,:] * abs(np.transpose(G_time)
 datacal = np.transpose(datacal,(1,0,2))
 
 print "writing to file"
-f = h5py.File('/Users/liamconnor/Desktop/calibration_data.hdf5','w')
+f = h5py.File('/scratch/k/krs/connor/calibration_data.hdf5','w')
 f.create_dataset('datacal', data=datacal)
 f.create_dataset('modelraw', data=modelraw)
 f.create_dataset('modelcal', data=modelcal)
