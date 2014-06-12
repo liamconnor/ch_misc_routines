@@ -4,10 +4,9 @@ import os
 import h5py
 import misc_data_io as misc
 
-chime_lat = 49.5
+chime_lat = 49.320
 
 class PulsarPipeline:
-
 
     def __init__(self, data_arr, time_stamps, time_res=0.010):
         self.data = data_arr.copy()
@@ -15,8 +14,14 @@ class PulsarPipeline:
         self.time_stamps = time_stamps
 
         if self.ntimes != len(self.time_stamps):
+            print self.ntimes, "not equal to", len(self.time_stamps)
             raise Exception('Number of samples disagree')
-            
+         
+        
+        self.RA = None
+        self.dec = None
+        self.RA_src = None
+
         self.time_res = time_res
         self.data = np.ma.array(self.data, mask=np.zeros(self.data.shape, dtype=bool))
         self.nfreq = self.data.shape[0]
@@ -26,17 +31,18 @@ class PulsarPipeline:
 
         self.ntimes = self.data.shape[-1]
         self.ncorr = self.data.shape[1]
-        self.baselines = np.loadtxt('/home/k/krs/connor/code/ch_misc_routines/pulsar/baselines_config22.txt')
-        self.d_EW = self.baselines[0]
-        self.d_NS = self.baselines[1]
-        print "Data array has shape:", self.data.shape
-        
-        self.RA = None
-        self.dec = None
+        self.corrs = range(self.ncorr)
 
-        self.u = self.d_EW * self.freq[:, np.newaxis] * 1e6 / (3e8)
-        self.v = self.d_NS * self.freq[:, np.newaxis] * 1e6 / (3e8)
-        print self.u.shape, self.v.shape
+        self.feed_loc = np.loadtxt('/home/k/krs/connor/code/ch_misc_routines/pulsar/feed_loc_layout29.txt')
+        
+        self.d_EW, self.d_NS = misc.calc_baseline(self.feed_loc)[:2]
+        
+        print "Data array has shape:", self.data.shape
+    
+
+        self.u = self.d_EW[np.newaxis, self.corrs, np.newaxis] * self.freq[:, np.newaxis, np.newaxis] * 1e6 / (3e8)
+        self.v = self.d_NS[np.newaxis, self.corrs, np.newaxis] * self.freq[:, np.newaxis, np.newaxis] * 1e6 / (3e8)
+        
         
     def dm_delays(self, dm, f_ref):
         """
@@ -94,19 +100,77 @@ class PulsarPipeline:
 
         delays = self.dm_delays(dm, f_ref)[start_chan:end_chan, np.newaxis, np.newaxis] * np.ones([1, data.shape[1], data.shape[-1]])
         dedispersed_times = times[np.newaxis, np.newaxis, :] * np.ones([data.shape[0], data.shape[1], 1]) - delays
-        
+
         bins = (((dedispersed_times / p0) % 1) * nbins).astype(int)
-        profile = np.zeros([data.shape[1], nbins], dtype=np.complex128)
-        
+        profile = np.zeros([data.shape[1], data.shape[2], nbins], dtype=np.complex128)
+        """
         for corr in range(self.ncorr):
             for i in range(nbins):
                 data_corr = data[:, corr, :]
                 bins_corr = bins[:, corr, :]
                 vals = data_corr[bins_corr==i]
                 profile[corr, i] += vals[vals!=0.0].mean()
-        
-        return profile
+        """ 
+        print "nbins",nbins
+        for corr in range(self.ncorr): 
+            for tt in range(data.shape[2]):
+                data_corr = data[:, corr]
+                print bins.shape, data_corr.shape
+                print np.bincount(bins[:, corr], weights=data_corr.real)
+                vals_real = np.bincount(bins[:, corr], weights=data_corr[tt].real, minlength=nbins)
+                vals_imag = np.bincount(bins[:, corr], weights=data_corr[tt].imag, minlength=nbins)
+                
+                profile[corr, tt] = (vals_real + 1j * vals_imag)
+
+
+        return profile.mean(axis=1)
     
+    def fold2(self, p0, dm, nbins=32, time_rebin=1000, freq_rebin=32, **kwargs):
+
+        if kwargs.has_key('start_chan'): start_chan = kwargs['start_chan']
+        else: start_chan = 0
+        if kwargs.has_key('end_chan'): end_chan = kwargs['end_chan']
+        else: end_chan = self.nfreq
+        if kwargs.has_key('start_samp'): start_samp = kwargs['start_samp']
+        else: start_samp = 0
+        if kwargs.has_key('end_samp'): end_samp = kwargs['end_samp']
+        else: end_samp = self.ntimes   
+
+        if kwargs.has_key('f_ref'): f_ref = kwargs['f_ref']
+        else: f_ref = freq[0]
+
+        nt = self.ntimes / time_rebin
+        nf = self.nfreq / freq_rebin
+
+        data = self.data.copy()
+        
+        delays = self.dm_delays(dm, f_ref)[start_chan:end_chan, np.newaxis, np.newaxis] * np.ones([1, data.shape[1], data.shape[-1]])
+        delays = self.dm_delays(dm, f_ref)
+
+        tstamps_all = self.time_stamps[:(nt * time_rebin)].reshape(nt, time_rebin)
+        dset = data[:,:,:(nt * time_rebin)].reshape(self.nfreq, self.ncorr, nt, -1)
+        
+        arr_shape = dset.shape[:-1] + (nbins,)
+        folded_arr = np.zeros(arr_shape, np.complex128)
+
+        for ti in range(nt):
+            tstamps = tstamps_all[ti]
+            
+            for fi in range(self.nfreq):
+
+                tstamp_f = tstamps - delays[fi]
+                bin = (((tstamp_f / p0) % 1.0) * nbins).astype(np.int)
+
+                for pi in range(self.ncorr):
+                    data_fold_r = np.bincount(bin, weights=dset[fi, pi, ti].real, minlength=nbins)
+                    data_fold_i = np.bincount(bin, weights=dset[fi, pi, ti].imag, minlength=nbins)
+                    gate_data = (data_fold_r + 1.0J * data_fold_i)
+
+                    folded_arr[fi, pi, ti] = gate_data
+
+        return folded_arr
+                    
+
     def fringe_stop(self):
         """
         Fringestops EW data so that we can collapse in time. What this should do is take in 
@@ -131,28 +195,28 @@ class PulsarPipeline:
     def fringestop(self):
         data = self.data.copy()
         data = data - np.mean(data, axis=-1)[:, :, np.newaxis]
-        ha = self.RA
+        
+        ha = np.deg2rad(self.RA[np.newaxis, np.newaxis, :]) - self.RA_src
         dec = np.deg2rad(self.dec)
         
-        print "before", ha, dec
-        phase = self.fringestop_phase(ha, chime_lat, dec, self.u, self.v)
-        self.data = data * phase[:, :, np.newaxis]
+        phase = self.fringestop_phase(ha, np.deg2rad(chime_lat), dec, self.u, self.v)
+        self.data = data * phase
 
     def fringestop_phase(self, ha, lat, dec, u, v):
-        """Return the phase required to fringestop.
+        """Return the phase required to fringestop. All angle inputs are radians. 
 
         Parameter
         ---------
         ha : array_like
-        The Hour Angle of the source to fringestop too.
+             The Hour Angle of the source to fringestop too.
         lat : array_like
-        The latitude of the observatory.
+             The latitude of the observatory.
         dec : array_like
-        The declination of the source.
+             The declination of the source.
         u : array_like
-        The EW separation in wavelengths (increases to the E)
+             The EW separation in wavelengths (increases to the E)
         v : array_like
-        The NS separation in wavelengths (increases to the N)
+             The NS separation in wavelengths (increases to the N)
         
         Returns
         -------
@@ -163,7 +227,6 @@ class PulsarPipeline:
         
         uhdotn = np.cos(dec) * np.sin(-ha)
         vhdotn = np.cos(lat) * np.sin(dec) - np.sin(lat) * np.cos(dec) * np.cos(-ha)
-        print "ha, dec %f %f" % (ha, dec)
         phase = uhdotn * u + vhdotn * v
 
         return np.exp(2.0J * np.pi * phase)
@@ -241,3 +304,72 @@ def running_mean(arr, radius=50):
     
     return ret[:, n-1:] / n
 
+def find_ongate(arr, ref_prod=[45, 91]):
+    """
+    For now, take the two 26m autos and find the on-gate after dedispersing and summing
+    over whole band.
+    
+    Parameters
+    ==========
+    arr: np.array
+         Complex array with folded pulsar data. Should be shaped (nfreq, ncorr, ntimes, n_phase_bins)
+    ref_prod: list
+         List with two 26m autocorrelation product indices
+
+    Return
+    ======
+    bin_x:
+         Array with on-gate for each timestamp, as seen in 26m x-pol auto
+    bin_y:
+         Array with on-gate for each timestamp, as seen in 26m y-pol auto    
+    bin_diff:
+         Difference between bin_x and bin_y. Should be zero for most timestamps.
+     
+    """
+    dat_x = abs(arr[:, ref_prod[0]]).mean(axis=0)
+    dat_y = abs(arr[:, ref_prod[1]]).mean(axis=0)
+    
+    bin_x = np.argmax(dat_x, axis=1)
+    bin_y = np.argmax(dat_y, axis=1)
+
+    bin_diff = bin_x - bin_y
+
+    return bin_x, bin_y, bin_diff
+
+def correct_phase_bins(arr, bin_tup):
+    """
+    Realigns data such that pulse shows up in only one phase bin as a function of time.
+
+
+    Parameters
+    ==========
+    arr: np.array
+         Complex array with folded pulsar data. Should be shaped (nfreq, ncorr, ntimes, n_phase_bins)
+    bin_tup: tuple
+         Tuple of length 3 with pulse bin information from ch_pulsar_analysis.find_ongate
+    Return
+    ======
+    arr:
+         Pulsar data array realigned such that the pulses are in the central phase bin
+    """
+    data = arr.copy()
+    ntimes = data.shape[2]
+    nbins = data.shape[-1]
+    bin_x, bin_y, bin_diff = bin_tup
+    
+    for tt in range(ntimes):
+        if bin_diff[tt] == 0:
+            on_bin = bin_x[tt]
+        elif bin_diff[tt] == 1:
+            on_bin = bin_y[tt] #Replace this with something unbiased!
+        else:
+            on_bin = bin_x[tt-1]
+                
+        data[:, :, tt] = np.roll(data[:,:,tt], np.int(nbins/2.0) - on_bin, axis=-1)
+
+    return data
+
+
+    
+    
+    

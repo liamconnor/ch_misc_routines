@@ -7,7 +7,7 @@ class PhaseAnalysis():
         self.on_gate = on_gate
         self.n_feed = 8
         self.ncorr = self.n_feed * (self.n_feed + 1) / 2
-        self.nfreq = 1024
+        #self.nfreq = 1024.
         
         self.data_lag = None
         self.lag_pixel = None
@@ -38,6 +38,8 @@ class PhaseAnalysis():
         self.on_pulse_data = data[:, :, :, self.on_gate] - 0.5 * (data[:, :, :, self.on_gate-2] + data[:, :, :, self.on_gate+2])
         self.data_lag = np.fft.fftshift(np.fft.fft(np.hanning(nfreq)[:, np.newaxis, np.newaxis]\
                                                       * self.on_pulse_data, axis=0), axes=0)
+        #on_pulse_mean_pad = np.pad(self.on_pulse_data.mean(axis=-1), ((1e6, 1e6),(0,0)), 'constant', constant_values=(0,0))
+        #self.data_lag = np.fft.fftshift(np.fft.fft(np.hanning(on_pulse_mean_pad.shape[0])[:, np.newaxis] * on_pulse_mean_pad, axis=0), axes=0)
         data_lag_mean = abs(self.data_lag).mean(axis=-1)
         
         print "Getting each correlation's lag offset"
@@ -75,7 +77,7 @@ class PhaseAnalysis():
         phi = eval[-1]**0.5 * evec[:, -1]
         lag_sol = np.angle(phi) * 100.0
 
-        return lag_sol
+        return lag_sol - lag_sol[0]
         
     def correct_lag(self, data=None):
         """
@@ -91,7 +93,8 @@ class PhaseAnalysis():
         the lag corrected inverse fourier transformed data array
         """
         if data is None: data = self.on_pulse_data
+        nfreq = data.shape[0]
+        #data_zerolag = data * np.exp(-2*np.pi*1j * self.lag_pixel[np.newaxis, :, np.newaxis] * np.fft.fftfreq(data.shape[0])[:, np.newaxis, np.newaxis])
+        data_zerolag = data * np.exp(-2*np.pi*1j * self.lag_pixel[np.newaxis, :, np.newaxis] * np.arange(nfreq)[:, np.newaxis, np.newaxis]/nfreq)
 
-        data_zerolag = data * np.exp(-2*np.pi*1j * self.lag_pixel[np.newaxis, :, np.newaxis] * np.fft.fftfreq(data.shape[0])[:, np.newaxis, np.newaxis])
-        
         return data_zerolag, np.fft.fftshift(np.fft.fft(np.hanning(data.shape[0])[:, np.newaxis, np.newaxis] * data_zerolag, axis=0))
