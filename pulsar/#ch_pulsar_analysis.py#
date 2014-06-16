@@ -138,7 +138,7 @@ class PulsarPipeline:
         delays = self.dm_delays(dm, f_ref)[start_chan:end_chan]
 
         tstamps_all = self.time_stamps[:(nt * time_rebin)].reshape(nt, time_rebin)
-        dset = data[:,:,:(nt * time_rebin)].reshape(self.nfreq, self.ncorr, nt, -1)
+        dset = data[:,:,:(nt * time_rebin)].reshape(nf, freq_rebin, self.ncorr, nt, -1)
         
         arr_shape = dset.shape[:-1] + (nbins,)
         folded_arr = np.zeros(arr_shape, np.complex128)

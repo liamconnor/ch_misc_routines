@@ -23,10 +23,11 @@ parser.add_argument("--time_int", help="Number of samples to integrate over", de
 parser.add_argument("--freq_int", help="Number of frequencies to integrate over", default=1, type=int)
 parser.add_argument("--ncorr", help="Number of correlations to include", default=36, type=int)
 parser.add_argument("--use_fpga", help="Use fpga counts instead of timestamps", default=0, type=int)
+parser.add_argument("--add_tag", help="Add tag to outfile name to help identify data product", default=None)
 args = parser.parse_args()
 
 sources = np.loadtxt('/home/k/krs/connor/code/ch_misc_routines/pulsar/sources2.txt', dtype=str)[1:]
-
+print np.str(args.add_tag)
 RA_src, dec, DM, p1 = np.float(sources[sources[:,0]==args.pulsar][0][1]), np.float(sources[sources[:,0]==args.pulsar][0][2]), np.float(sources[sources[:,0]==args.pulsar][0][3]),\
     np.float(sources[sources[:,0]==args.pulsar][0][4])
 
@@ -85,7 +86,7 @@ print "Getting", file_chunk*jj, ":", file_chunk*(jj+1)
 ]
 """
 #corrs = [0, 16, 7, 45, 91]
-corrs = [57, 45, 91]
+corrs = [35, 57, 45, 91]
 
 data_arr, time_full, RA, fpga_count = misc.get_data(list[file_chunk*jj:file_chunk*(jj+1)])[1:]
 data_arr = data_arr[:, corrs, :]
@@ -159,7 +160,7 @@ if jj==0:
             print filename
             break
 
-    outfile = outdir + args.pulsar + filename + np.str(freq_int) + fpga_tag + '.newDM.hdf5'
+    outfile = outdir + args.pulsar + filename + np.str(freq_int) + fpga_tag + np.str(args.add_tag) + '.hdf5'
     
     if os.path.isfile(outfile):
         os.remove(outfile)
