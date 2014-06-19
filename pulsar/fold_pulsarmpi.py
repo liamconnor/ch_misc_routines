@@ -10,9 +10,6 @@ from mpi4py import MPI
 comm = MPI.COMM_WORLD
 print comm.rank, comm.size
 
-nnodes = 60
-file_chunk = 10
-
 outdir = '/scratch/k/krs/connor/chime/calibration/'
 
 parser = argparse.ArgumentParser(description="This script RFI-cleans, fringestops, and folds the pulsar data.")
@@ -23,15 +20,18 @@ parser.add_argument("--time_int", help="Number of samples to integrate over", de
 parser.add_argument("--freq_int", help="Number of frequencies to integrate over", default=1, type=int)
 parser.add_argument("--ncorr", help="Number of correlations to include", default=36, type=int)
 parser.add_argument("--use_fpga", help="Use fpga counts instead of timestamps", default=0, type=int)
-parser.add_argument("--add_tag", help="Add tag to outfile name to help identify data product", default=None)
+parser.add_argument("--add_tag", help="Add tag to outfile name to help identify data product", default='')
+parser.add_argument("--nnodes", help='Number of nodes', default=30, type=int)
+parser.add_argument("--chunksize", help='Number of files to read per node', default=10, type=int)
 args = parser.parse_args()
 
 sources = np.loadtxt('/home/k/krs/connor/code/ch_misc_routines/pulsar/sources2.txt', dtype=str)[1:]
-print np.str(args.add_tag)
+
 RA_src, dec, DM, p1 = np.float(sources[sources[:,0]==args.pulsar][0][1]), np.float(sources[sources[:,0]==args.pulsar][0][2]), np.float(sources[sources[:,0]==args.pulsar][0][3]),\
     np.float(sources[sources[:,0]==args.pulsar][0][4])
 
-#p1/=1.001
+nnodes = args.nnodes
+file_chunk = args.chunksize
 
 ncorr = args.ncorr
 dat_name = args.data_dir[-16:]
@@ -48,6 +48,8 @@ jj = comm.rank
 
 print "Starting chunk %i of %i" % (jj+1, nchunks)
 print "Getting", file_chunk*jj, ":", file_chunk*(jj+1)
+
+corrs = [misc.feed_map(i, 3, 16) for i in range(16)] #+ [misc.feed_map(i, 3, 16) for i in range(16)] 
 
 """
 #corrs = [

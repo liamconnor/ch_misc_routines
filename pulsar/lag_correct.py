@@ -71,6 +71,7 @@ class PhaseAnalysis():
         """
         lag_exp = np.exp(1j * lag_pixel / 100.0) 
         # divide by 100. so exponentials don't tempt numerical precision
+        print self.n_feed
         phi_arr = misc.gen_corr_matrix(lag_exp, self.n_feed)
         eval, evec = np.linalg.eigh(phi_arr)
         print "Solving phase matrix"

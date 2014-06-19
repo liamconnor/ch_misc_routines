@@ -1,0 +1,205 @@
+Traceback (most recent call last):
+  File "fold_pulsarmpi.py", line 93, in <module>
+Traceback (most recent call last):
+  File "fold_pulsarmpi.py", line 93, in <module>
+Traceback (most recent call last):
+  File "fold_pulsarmpi.py", line 93, in <module>
+Traceback (most recent call last):
+  File "fold_pulsarmpi.py", line 93, in <module>
+Traceback (most recent call last):
+  File "fold_pulsarmpi.py", line 93, in <module>
+Traceback (most recent call last):
+  File "fold_pulsarmpi.py", line 93, in <module>
+Traceback (most recent call last):
+  File "fold_pulsarmpi.py", line 93, in <module>
+Traceback (most recent call last):
+  File "fold_pulsarmpi.py", line 93, in <module>
+Traceback (most recent call last):
+  File "fold_pulsarmpi.py", line 93, in <module>
+Traceback (most recent call last):
+  File "fold_pulsarmpi.py", line 93, in <module>
+Traceback (most recent call last):
+  File "fold_pulsarmpi.py", line 93, in <module>
+    data_arr, time_full, RA, fpga_count = misc.get_data(list[file_chunk*jj:file_chunk*(jj+1)])[1:]
+  File "/home/k/krs/connor/code/ch_misc_routines/data_analysis/misc_data_io.py", line 15, in get_data
+    data_arr, time_full, RA, fpga_count = misc.get_data(list[file_chunk*jj:file_chunk*(jj+1)])[1:]
+  File "/home/k/krs/connor/code/ch_misc_routines/data_analysis/misc_data_io.py", line 15, in get_data
+    data_arr, time_full, RA, fpga_count = misc.get_data(list[file_chunk*jj:file_chunk*(jj+1)])[1:]
+  File "/home/k/krs/connor/code/ch_misc_routines/data_analysis/misc_data_io.py", line 15, in get_data
+    data_arr, time_full, RA, fpga_count = misc.get_data(list[file_chunk*jj:file_chunk*(jj+1)])[1:]
+  File "/home/k/krs/connor/code/ch_misc_routines/data_analysis/misc_data_io.py", line 15, in get_data
+    data_arr, time_full, RA, fpga_count = misc.get_data(list[file_chunk*jj:file_chunk*(jj+1)])[1:]
+  File "/home/k/krs/connor/code/ch_misc_routines/data_analysis/misc_data_io.py", line 15, in get_data
+    data_arr, time_full, RA, fpga_count = misc.get_data(list[file_chunk*jj:file_chunk*(jj+1)])[1:]
+    data_arr, time_full, RA, fpga_count = misc.get_data(list[file_chunk*jj:file_chunk*(jj+1)])[1:]
+  File "/home/k/krs/connor/code/ch_misc_routines/data_analysis/misc_data_io.py", line 15, in get_data
+  File "/home/k/krs/connor/code/ch_misc_routines/data_analysis/misc_data_io.py", line 15, in get_data
+    data_arr, time_full, RA, fpga_count = misc.get_data(list[file_chunk*jj:file_chunk*(jj+1)])[1:]
+  File "/home/k/krs/connor/code/ch_misc_routines/data_analysis/misc_data_io.py", line 15, in get_data
+Traceback (most recent call last):
+  File "fold_pulsarmpi.py", line 93, in <module>
+    data_arr, time_full, RA, fpga_count = misc.get_data(list[file_chunk*jj:file_chunk*(jj+1)])[1:]
+  File "/home/k/krs/connor/code/ch_misc_routines/data_analysis/misc_data_io.py", line 15, in get_data
+    data_arr, time_full, RA, fpga_count = misc.get_data(list[file_chunk*jj:file_chunk*(jj+1)])[1:]
+  File "/home/k/krs/connor/code/ch_misc_routines/data_analysis/misc_data_io.py", line 15, in get_data
+Traceback (most recent call last):
+  File "fold_pulsarmpi.py", line 93, in <module>
+    data_arr, time_full, RA, fpga_count = misc.get_data(list[file_chunk*jj:file_chunk*(jj+1)])[1:]
+  File "/home/k/krs/connor/code/ch_misc_routines/data_analysis/misc_data_io.py", line 15, in get_data
+Traceback (most recent call last):
+  File "fold_pulsarmpi.py", line 93, in <module>
+    data_arr, time_full, RA, fpga_count = misc.get_data(list[file_chunk*jj:file_chunk*(jj+1)])[1:]
+  File "/home/k/krs/connor/code/ch_misc_routines/data_analysis/misc_data_io.py", line 15, in get_data
+Traceback (most recent call last):
+  File "fold_pulsarmpi.py", line 93, in <module>
+    data_arr, time_full, RA, fpga_count = misc.get_data(list[file_chunk*jj:file_chunk*(jj+1)])[1:]
+  File "/home/k/krs/connor/code/ch_misc_routines/data_analysis/misc_data_io.py", line 15, in get_data
+    data = chand.from_acq_h5(file)
+  File "/home/k/krs/jrs65/chime/2014_04/virtualenv/stable_a/lib/python2.7/site-packages/ch_util/andata.py", line 195, in from_acq_h5
+    data = chand.from_acq_h5(file)
+  File "/home/k/krs/jrs65/chime/2014_04/virtualenv/stable_a/lib/python2.7/site-packages/ch_util/andata.py", line 195, in from_acq_h5
+    data_arr, time_full, RA, fpga_count = misc.get_data(list[file_chunk*jj:file_chunk*(jj+1)])[1:]
+    data = chand.from_acq_h5(file)
+  File "/home/k/krs/connor/code/ch_misc_routines/data_analysis/misc_data_io.py", line 15, in get_data
+  File "/home/k/krs/jrs65/chime/2014_04/virtualenv/stable_a/lib/python2.7/site-packages/ch_util/andata.py", line 195, in from_acq_h5
+    data = chand.from_acq_h5(file)
+  File "/home/k/krs/jrs65/chime/2014_04/virtualenv/stable_a/lib/python2.7/site-packages/ch_util/andata.py", line 195, in from_acq_h5
+    data = chand.from_acq_h5(file)
+  File "/home/k/krs/jrs65/chime/2014_04/virtualenv/stable_a/lib/python2.7/site-packages/ch_util/andata.py", line 195, in from_acq_h5
+Traceback (most recent call last):
+  File "fold_pulsarmpi.py", line 93, in <module>
+Traceback (most recent call last):
+  File "fold_pulsarmpi.py", line 93, in <module>
+Traceback (most recent call last):
+  File "fold_pulsarmpi.py", line 93, in <module>
+    data_arr, time_full, RA, fpga_count = misc.get_data(list[file_chunk*jj:file_chunk*(jj+1)])[1:]
+  File "/home/k/krs/connor/code/ch_misc_routines/data_analysis/misc_data_io.py", line 15, in get_data
+    data = chand.from_acq_h5(file)
+  File "/home/k/krs/jrs65/chime/2014_04/virtualenv/stable_a/lib/python2.7/site-packages/ch_util/andata.py", line 195, in from_acq_h5
+    data = chand.from_acq_h5(file)
+  File "/home/k/krs/jrs65/chime/2014_04/virtualenv/stable_a/lib/python2.7/site-packages/ch_util/andata.py", line 195, in from_acq_h5
+    data = chand.from_acq_h5(file)
+  File "/home/k/krs/jrs65/chime/2014_04/virtualenv/stable_a/lib/python2.7/site-packages/ch_util/andata.py", line 195, in from_acq_h5
+    data = chand.from_acq_h5(file)
+  File "/home/k/krs/jrs65/chime/2014_04/virtualenv/stable_a/lib/python2.7/site-packages/ch_util/andata.py", line 195, in from_acq_h5
+    data_arr, time_full, RA, fpga_count = misc.get_data(list[file_chunk*jj:file_chunk*(jj+1)])[1:]
+  File "/home/k/krs/connor/code/ch_misc_routines/data_analysis/misc_data_io.py", line 15, in get_data
+    data_arr, time_full, RA, fpga_count = misc.get_data(list[file_chunk*jj:file_chunk*(jj+1)])[1:]
+  File "/home/k/krs/connor/code/ch_misc_routines/data_analysis/misc_data_io.py", line 15, in get_data
+    data = chand.from_acq_h5(file)
+    data = chand.from_acq_h5(file)
+  File "/home/k/krs/jrs65/chime/2014_04/virtualenv/stable_a/lib/python2.7/site-packages/ch_util/andata.py", line 195, in from_acq_h5
+    data_arr, time_full, RA, fpga_count = misc.get_data(list[file_chunk*jj:file_chunk*(jj+1)])[1:]
+  File "/home/k/krs/jrs65/chime/2014_04/virtualenv/stable_a/lib/python2.7/site-packages/ch_util/andata.py", line 195, in from_acq_h5
+  File "/home/k/krs/connor/code/ch_misc_routines/data_analysis/misc_data_io.py", line 15, in get_data
+    data = chand.from_acq_h5(file)
+  File "/home/k/krs/jrs65/chime/2014_04/virtualenv/stable_a/lib/python2.7/site-packages/ch_util/andata.py", line 195, in from_acq_h5
+    data = chand.from_acq_h5(file)
+    data = chand.from_acq_h5(file)
+  File "/home/k/krs/jrs65/chime/2014_04/virtualenv/stable_a/lib/python2.7/site-packages/ch_util/andata.py", line 195, in from_acq_h5
+  File "/home/k/krs/jrs65/chime/2014_04/virtualenv/stable_a/lib/python2.7/site-packages/ch_util/andata.py", line 195, in from_acq_h5
+    data = chand.from_acq_h5(file)
+  File "/home/k/krs/jrs65/chime/2014_04/virtualenv/stable_a/lib/python2.7/site-packages/ch_util/andata.py", line 195, in from_acq_h5
+    data = chand.from_acq_h5(file)
+  File "/home/k/krs/jrs65/chime/2014_04/virtualenv/stable_a/lib/python2.7/site-packages/ch_util/andata.py", line 195, in from_acq_h5
+    data = chand.from_acq_h5(file)
+  File "/home/k/krs/jrs65/chime/2014_04/virtualenv/stable_a/lib/python2.7/site-packages/ch_util/andata.py", line 195, in from_acq_h5
+    data = chand.from_acq_h5(file)
+  File "/home/k/krs/jrs65/chime/2014_04/virtualenv/stable_a/lib/python2.7/site-packages/ch_util/andata.py", line 195, in from_acq_h5
+Traceback (most recent call last):
+  File "fold_pulsarmpi.py", line 93, in <module>
+Traceback (most recent call last):
+  File "fold_pulsarmpi.py", line 93, in <module>
+Traceback (most recent call last):
+  File "fold_pulsarmpi.py", line 93, in <module>
+Traceback (most recent call last):
+  File "fold_pulsarmpi.py", line 93, in <module>
+    data_arr, time_full, RA, fpga_count = misc.get_data(list[file_chunk*jj:file_chunk*(jj+1)])[1:]
+  File "/home/k/krs/connor/code/ch_misc_routines/data_analysis/misc_data_io.py", line 15, in get_data
+    data_arr, time_full, RA, fpga_count = misc.get_data(list[file_chunk*jj:file_chunk*(jj+1)])[1:]
+  File "/home/k/krs/connor/code/ch_misc_routines/data_analysis/misc_data_io.py", line 15, in get_data
+    data_arr, time_full, RA, fpga_count = misc.get_data(list[file_chunk*jj:file_chunk*(jj+1)])[1:]
+Traceback (most recent call last):
+  File "fold_pulsarmpi.py", line 93, in <module>
+  File "/home/k/krs/connor/code/ch_misc_routines/data_analysis/misc_data_io.py", line 15, in get_data
+    data_arr, time_full, RA, fpga_count = misc.get_data(list[file_chunk*jj:file_chunk*(jj+1)])[1:]
+  File "/home/k/krs/connor/code/ch_misc_routines/data_analysis/misc_data_io.py", line 15, in get_data
+    raise ValueError('Acquisition file list is empty.')
+ValueError: Acquisition file list is empty.
+    raise ValueError('Acquisition file list is empty.')
+    data = chand.from_acq_h5(file)
+ValueError: Acquisition file list is empty.
+  File "/home/k/krs/jrs65/chime/2014_04/virtualenv/stable_a/lib/python2.7/site-packages/ch_util/andata.py", line 195, in from_acq_h5
+    raise ValueError('Acquisition file list is empty.')
+ValueError: Acquisition file list is empty.
+    data = chand.from_acq_h5(file)
+  File "/home/k/krs/jrs65/chime/2014_04/virtualenv/stable_a/lib/python2.7/site-packages/ch_util/andata.py", line 195, in from_acq_h5
+    raise ValueError('Acquisition file list is empty.')
+    raise ValueError('Acquisition file list is empty.')
+ValueError: Acquisition file list is empty.
+ValueError: Acquisition file list is empty.
+    raise ValueError('Acquisition file list is empty.')
+    raise ValueError('Acquisition file list is empty.')
+ValueError: ValueError: Acquisition file list is empty.
+Acquisition file list is empty.
+    raise ValueError('Acquisition file list is empty.')
+ValueError: Acquisition file list is empty.
+    data = chand.from_acq_h5(file)
+  File "/home/k/krs/jrs65/chime/2014_04/virtualenv/stable_a/lib/python2.7/site-packages/ch_util/andata.py", line 195, in from_acq_h5
+    raise ValueError('Acquisition file list is empty.')
+    raise ValueError('Acquisition file list is empty.')
+ValueError: Acquisition file list is empty.
+ValueError: Acquisition file list is empty.
+    raise ValueError('Acquisition file list is empty.')
+ValueError: Acquisition file list is empty.
+    data = chand.from_acq_h5(file)
+  File "/home/k/krs/jrs65/chime/2014_04/virtualenv/stable_a/lib/python2.7/site-packages/ch_util/andata.py", line 195, in from_acq_h5
+    raise ValueError('Acquisition file list is empty.')
+ValueError: Acquisition file list is empty.
+    raise ValueError('Acquisition file list is empty.')
+ValueError: Acquisition file list is empty.
+    data_arr, time_full, RA, fpga_count = misc.get_data(list[file_chunk*jj:file_chunk*(jj+1)])[1:]
+  File "/home/k/krs/connor/code/ch_misc_routines/data_analysis/misc_data_io.py", line 15, in get_data
+    raise ValueError('Acquisition file list is empty.')
+ValueError: Acquisition file list is empty.
+    raise ValueError('Acquisition file list is empty.')
+ValueError: Acquisition file list is empty.
+    raise ValueError('Acquisition file list is empty.')
+ValueError: Acquisition file list is empty.
+    raise ValueError('Acquisition file list is empty.')
+ValueError: Acquisition file list is empty.
+    raise ValueError('Acquisition file list is empty.')
+ValueError: Acquisition file list is empty.
+    raise ValueError('Acquisition file list is empty.')
+ValueError: Acquisition file list is empty.
+    raise ValueError('Acquisition file list is empty.')
+ValueError: Acquisition file list is empty.
+    data = chand.from_acq_h5(file)
+  File "/home/k/krs/jrs65/chime/2014_04/virtualenv/stable_a/lib/python2.7/site-packages/ch_util/andata.py", line 195, in from_acq_h5
+    raise ValueError('Acquisition file list is empty.')
+ValueError: Acquisition file list is empty.
+Traceback (most recent call last):
+  File "fold_pulsarmpi.py", line 93, in <module>
+    raise ValueError('Acquisition file list is empty.')
+ValueError: Acquisition file list is empty.
+    raise ValueError('Acquisition file list is empty.')
+ValueError: Acquisition file list is empty.    data_arr, time_full, RA, fpga_count = misc.get_data(list[file_chunk*jj:file_chunk*(jj+1)])[1:]
+
+  File "/home/k/krs/connor/code/ch_misc_routines/data_analysis/misc_data_io.py", line 15, in get_data
+Traceback (most recent call last):
+  File "fold_pulsarmpi.py", line 93, in <module>
+    data_arr, time_full, RA, fpga_count = misc.get_data(list[file_chunk*jj:file_chunk*(jj+1)])[1:]
+  File "/home/k/krs/connor/code/ch_misc_routines/data_analysis/misc_data_io.py", line 15, in get_data
+    data = chand.from_acq_h5(file)
+  File "/home/k/krs/jrs65/chime/2014_04/virtualenv/stable_a/lib/python2.7/site-packages/ch_util/andata.py", line 195, in from_acq_h5
+    raise ValueError('Acquisition file list is empty.')
+ValueError: Acquisition file list is empty.
+    data = chand.from_acq_h5(file)
+  File "/home/k/krs/jrs65/chime/2014_04/virtualenv/stable_a/lib/python2.7/site-packages/ch_util/andata.py", line 195, in from_acq_h5
+    raise ValueError('Acquisition file list is empty.')
+ValueError: Acquisition file list is empty.
+=>> PBS: job killed: walltime 1823 exceeded limit 1800
+Terminated
+mpirun: killing job...
+
+MXM: Got signal 15 (Terminated)

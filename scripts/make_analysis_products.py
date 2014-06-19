@@ -15,7 +15,7 @@ outdir = '/scratch/k/krs/connor/chime/calibration/'
 dat_name = args.data_file[-35:-12]
 dir_name = dat_name[:-7]
 
-ncorr = 36
+ncorr = 4
 
 file = h5py.File(args.data_file)
 data_allcorr = file['folded_arr'][:]
@@ -34,6 +34,7 @@ print "%i/%i correlations peak in gate %i" % (mode_on[1], ncorr, mode_on[0])
 print ""
 
 PhAn = lag_cor.PhaseAnalysis(mode_on[0][0])
+PhAn.n_feed = 16
 
 lag_pixel = PhAn.get_lag_pixel(data_allcorr)
 lag_sol = PhAn.solve_lag(lag_pixel)

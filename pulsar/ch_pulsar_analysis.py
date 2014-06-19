@@ -32,18 +32,18 @@ class PulsarPipeline:
         self.ntimes = self.data.shape[-1]
         self.ncorr = self.data.shape[1]
         self.corrs = range(self.ncorr)
-
-        self.feed_loc = np.loadtxt('/home/k/krs/connor/code/ch_misc_routines/pulsar/feed_loc_layout29.txt')
-        
-        self.d_EW, self.d_NS = misc.calc_baseline(self.feed_loc)[:2]
         
         print "Data array has shape:", self.data.shape
     
 
-        self.u = self.d_EW[np.newaxis, self.corrs, np.newaxis] * self.freq[:, np.newaxis, np.newaxis] * 1e6 / (3e8)
-        self.v = self.d_NS[np.newaxis, self.corrs, np.newaxis] * self.freq[:, np.newaxis, np.newaxis] * 1e6 / (3e8)
+    def get_uv(self):
+        feed_loc = np.loadtxt('/home/k/krs/connor/code/ch_misc_routines/pulsar/feed_loc_layout29.txt')
+        d_EW, d_NS = misc.calc_baseline(feed_loc)[:2]
+        u = d_EW[np.newaxis, self.corrs, np.newaxis] * self.freq[:, np.newaxis, np.newaxis] * 1e6 / (3e8)
+        v = d_NS[np.newaxis, self.corrs, np.newaxis] * self.freq[:, np.newaxis, np.newaxis] * 1e6 / (3e8)
         
-        
+        return u, v
+
     def dm_delays(self, dm, f_ref):
         """
         Provides dispersion delays as a function of frequency. 
@@ -190,8 +190,9 @@ class PulsarPipeline:
         
         ha = np.deg2rad(self.RA[np.newaxis, np.newaxis, :]) - self.RA_src
         dec = np.deg2rad(self.dec)
-        
-        phase = self.fringestop_phase(ha, np.deg2rad(chime_lat), dec, self.u, self.v)
+        u, v = self.get_uv()
+        print "second", u[0, :, 0]
+        phase = self.fringestop_phase(ha, np.deg2rad(chime_lat), dec, u, v)
         self.data = data * phase
 
     def fringestop_phase(self, ha, lat, dec, u, v):
