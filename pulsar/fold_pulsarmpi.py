@@ -49,10 +49,9 @@ jj = comm.rank
 print "Starting chunk %i of %i" % (jj+1, nchunks)
 print "Getting", file_chunk*jj, ":", file_chunk*(jj+1)
 
-corrs = [misc.feed_map(i, 3, 16) for i in range(16)] #+ [misc.feed_map(i, 3, 16) for i in range(16)] 
+#corrs = [misc.feed_map(i, 3, 16) for i in range(16)] #+ [misc.feed_map(i, 3, 16) for i in range(16)] 
 
-"""
-#corrs = [
+corrs = [
 3 ,
 18 ,
 32 ,
@@ -62,33 +61,7 @@ corrs = [misc.feed_map(i, 3, 16) for i in range(16)] #+ [misc.feed_map(i, 3, 16)
 48 ,
 49 ,
 50 ,
-51 ,
-52 ,
-53 ,
-54 ,
-55 ,
-56 ,
-57 ,
-7 ,
-22 ,
-36 ,
-49 ,
-61 ,
-72 ,
-82 ,
-91 ,
-92 ,
-93 ,
-94 ,
-95 ,
-96 ,
-97 ,
-98 ,
-99 ,
-]
-"""
-#corrs = [0, 16, 7, 45, 91]
-corrs = [35, 57, 45, 91]
+51 ]
 
 data_arr, time_full, RA, fpga_count = misc.get_data(list[file_chunk*jj:file_chunk*(jj+1)])[1:]
 data_arr = data_arr[:, corrs, :]
