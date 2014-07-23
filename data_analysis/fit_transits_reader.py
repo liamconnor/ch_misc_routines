@@ -26,7 +26,7 @@ args = parser.parse_args()
 Data = '/scratch/k/krs/jrs65/chime_archive/'
 f = data_index.Finder()
 f.set_time_range(datetime(2014,03,20), datetime(2014,03,22))
-f.include_transits(ephemeris.CasA, time_delta=3600)
+f.include_transits(ch_util.ephemeris.CasA, time_delta=3600)
 file_list = f.get_results()[0][0]
 
 for ii in range(len(file_list)):
