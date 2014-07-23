@@ -77,17 +77,7 @@ def beam_fit(Data, RA, correlations=[0], dec=0):
       best fit parameters of gaussian ordered by [C, m, A, sig, x_c] 
       where offset line is y=mx+C, A is gaussian amplitude, sig is stdev, and x_c is centroid
     """
-
-    if correlations=='autos':
-        correlations = [  0.,   8.,  15.,  21.,  26.,  30.,  33.,  35.]
-    elif correlations=='All':
-        correlations = np.arange(Data.shape[1])
-    else:
-        print "Error: Need proper set of correlations"
     
-#    correlations=[7, 22, 36]#, 61, 72, 82, 51, 52, 53, 55, 56, 57]
-    #correlations=[0, 16, 31]
-
     beam_fit = np.zeros([Data.shape[0], Data.shape[1], 5])
 
     print "Number of frequencies:", n_freq
