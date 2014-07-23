@@ -7,7 +7,7 @@ import scipy.optimize as so
 import ch_util.ephemeris as eph
 
 n_freq = 1024
-n_corr = 36
+n_corr = 136
 
 def gaussian(p,x):
     """ Generates a gaussian with a linear offset
@@ -57,7 +57,7 @@ def run_fit(Arr, freq, RA, correlation=0):
 
     return param_fit, Data, x
 
-def beam_fit(Data, RA, correlations=[0], dec=0):
+def beam_fit(Data, RA, correlations, dec=0):
     """ Gets a beam fits in frequency.
 
     Parameters
@@ -85,7 +85,7 @@ def beam_fit(Data, RA, correlations=[0], dec=0):
     else:
         print "Error: Need proper set of correlations"
     
-#    correlations=[7, 22, 36]#, 61, 72, 82, 51, 52, 53, 55, 56, 57]
+    correlations=[7, 22, 36]#, 61, 72, 82, 51, 52, 53, 55, 56, 57]
     #correlations=[0, 16, 31]
 
     beam_fit = np.zeros([Data.shape[0], Data.shape[1], 5])
@@ -93,7 +93,7 @@ def beam_fit(Data, RA, correlations=[0], dec=0):
     print "Number of frequencies:", n_freq
     
     for freq_ind in range(n_freq):
-        if (freq_ind % 128)==0: print "Done fitting freq:", freq_ind
+        if (freq_ind % 256)==0: print "Done fitting freq:", freq_ind
         for corr in correlations:
             p = run_fit(Data, freq_ind, RA, correlation=corr)[0]
             beam_fit[freq_ind, corr, :] = p

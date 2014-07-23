@@ -11,7 +11,7 @@ import fitting_modules as fm
 import ch_util.ephemeris as eph
 
 n_freq = 1024
-n_corr = 36
+n_corr = 136
 
 parser = argparse.ArgumentParser(description="This programs tries to fit beam from point-source trans\
 its.")
