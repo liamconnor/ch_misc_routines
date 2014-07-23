@@ -17,22 +17,26 @@ n_corr = 136
 
 parser = argparse.ArgumentParser(description="This programs tries to fit beam from point-source trans\
 its.")
-parser.add_argument("Data", help="Directory containing acquisition directories.")
-parser.add_argument("--Objects", help="Celestial objects to fit", default='All')
+parser.add_argument("data_dir", help="Directory containing acquisition directories.")
+parser.add_argument("--src", help="Celestial objects to fit", default='All')
 parser.add_argument("--minfile", help="Minfile number e.g. 0051", default="")
 parser.add_argument("--maxfile", help="Maxfile number e.g. 0051", default="")
 args = parser.parse_args()
 
-Data = '/scratch/k/krs/jrs65/chime_archive/'
+src = args.src
+
+# Create a dictionary with each fitting object's information in the form: {"Obj": [RA_min, RA_max, Declination]}.
+celestial_object = { "CasA": [344, 358, 58.83, ch_util.ephemeris.CasA], "TauA": [77, 87, 83.6, ch_util.ephemeris.TauA], "CygA": [297, 302, 40.73]}
+
 f = data_index.Finder()
 f.set_time_range(datetime(2014,03,20), datetime(2014,03,22))
-f.include_transits(ch_util.ephemeris.CasA, time_delta=3600)
+f.include_transits(celestial_object[src][3], time_delta=3600)
 file_list = f.get_results()[0][0]
 
 for ii in range(len(file_list)):
-    file_list[ii] = Data + file_list[ii]
+    file_list[ii] = args.data_dir + file_list[ii]
 
-dataobj = ch_util.andata.Reader(args.Data + file)
+dataobj = ch_util.andata.Reader(file_list)
 X = dataobj.read()
 vis, times = X.vis, X.timestamp
 RA = ch_util.ephemeris.transit_RA(times)
@@ -42,19 +46,9 @@ print "Reading in Data:", file
 print ""
 print "RA range of data:", RA.min(),":",RA.max()
 
-RA_sun = ch_util.ephemeris.transit_RA(eph.solar_transit(utime[0]))
-sun_RA_low = RA_sun - 6
-sun_RA_high = RA_sun + 6
-
-print ""
-print "Das sun was at: %f" % RA_sun
-
-# Create a dictionary with each fitting object's information in the form: {"Obj": [RA_min, RA_max, Declination]}.                                               
-celestial_object = { "CasA": [344, 358, 58.83], "TauA": [77, 87, 83.6], "CygA": [297, 302, 40.73], "Sun": [sun_RA_low, sun_RA_high, 0]}
-
 beam_params = fm.beam_fit(vis, RA, dec = celestial_object[src][2])
 
-transit_time = misc.eph.datetime.fromtimestamp(utime[0])
+transit_time = ch_util.ephemeris.datetime.fromtimestamp(times[0])
 date_str = transit_time.strftime('%Y_%m_%d')
 filename = '/scratch/k/krs/connor/beam_fit' + src + date_str + '.hdf5'
 
