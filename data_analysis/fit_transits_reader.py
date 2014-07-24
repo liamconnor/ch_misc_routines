@@ -17,6 +17,8 @@ n_freq = 1024
 parser = argparse.ArgumentParser(description="This programs tries to fit beam from point-source trans\
 its.")
 parser.add_argument("data_dir", help="Directory containing acquisition directories.")
+parser.add_argument("start_date", help="First day to search for transit in. Should be six digits YYYYMMDD", default=None)
+parser.add_argument("stop_date", help="Last day to search for transit in. Should be six digits YYYYMMDD", default=None)
 parser.add_argument("--src", help="Source whose transit will be fit", default='CasA')
 parser.add_argument("--outdir", help="Directory output file gets written to", default="/home/liam/")
 parser.add_argument("--product_set", help="Which subset of correlations to fit (e.g. autos)", default=None)
@@ -27,8 +29,11 @@ src = args.src
 # Create a dictionary with each fitting object's information in the form: {"Obj": [RA_min, RA_max, Declination]}.
 celestial_object = { "CasA": [344, 358, 58.83, ch_util.ephemeris.CasA], "TauA": [77, 87, 83.6, ch_util.ephemeris.TauA], "CygA": [297, 302, 40.73]}
 
+st = args.start_date
+end = args.stop_date
+
 f = data_index.Finder()
-f.set_time_range(datetime(2014,03,20), datetime(2014,03,22))
+f.set_time_range(datetime(int(st[:4]), int(st[4:6]), int(st[-2:])), datetime(int(end[:4]), int(end[4:6]), int(end[-2:])))
 f.include_transits(celestial_object[src][3], time_delta=5000)
 file_list = f.get_results()[0][0]
 
