@@ -36,6 +36,7 @@ f = data_index.Finder()
 f.set_time_range(datetime(int(st[:4]), int(st[4:6]), int(st[-2:])), datetime(int(end[:4]), int(end[4:6]), int(end[-2:])))
 f.include_transits(celestial_object[src][3], time_delta=5000)
 file_list = f.get_results()[0][0]
+print "Found transit in:", file_list
 
 for ii in range(len(file_list)):
     file_list[ii] = args.data_dir + file_list[ii]
