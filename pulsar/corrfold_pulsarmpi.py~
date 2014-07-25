@@ -10,7 +10,7 @@ from mpi4py import MPI
 comm = MPI.COMM_WORLD
 print comm.rank, comm.size
 
-outdir = '/scratch/k/krs/connor/chime/calibration/'
+
 
 parser = argparse.ArgumentParser(description="This script RFI-cleans, fringestops, and folds the pulsar data.")
 parser.add_argument("data_dir", help="Directory with hdf5 data files")
@@ -49,7 +49,8 @@ jj = comm.rank
 print "Starting chunk %i of %i" % (jj+1, nchunks)
 print "Getting", file_chunk*jj, ":", file_chunk*(jj+1)
 
-corrs = [misc.feed_map(i, i, 16) for i in range(16)] #+ [misc.feed_map(i, 3, 16) for i in range(16)] 
+corrs = [misc.feed_map(i, 3, 16) for i in range(16)] #+ [misc.feed_map(i, 3, 16) for i in range(16)] 
+print corrs
 
 data_arr, time_full, RA, fpga_count = misc.get_data(list[file_chunk*jj:file_chunk*(jj+1)])[1:]
 data_arr = data_arr[:, corrs, :]
@@ -61,6 +62,8 @@ time_int = args.time_int
 freq_int = args.freq_int 
 
 fpga_tag = ''
+
+outdir = '/scratch/k/krs/connor/chime/calibration/' 
 
 if args.use_fpga==1:
     time = (fpga_count - fpga_count[0]) * (np.diff(time_full)[0]) / np.diff(fpga_count)[0]
@@ -76,7 +79,7 @@ n_phase_bins = args.n_phase_bins
 ncorr = len(corrs)    
 folded_arr = np.zeros([n_freq_bins, ncorr, n_time_bins, n_phase_bins], np.complex128)
 
-print "folded pulsar array", jj,"has shape", folded_arr.shape
+print "folded pulsar array", jj, "has shape", folded_arr.shape
 
 RC = chp.RFI_Clean(data_arr, time)
 RC.dec = dec
@@ -95,42 +98,43 @@ for freq in range(n_freq_bins):
 fullie = []
 final_list = []
 
-if os.path.isdir(outdir + dat_name):
+count=0
+print args.data_dir
+for letter in args.data_dir:
+    count+=1
+    if letter=='2':
+        filename=args.data_dir[count-1:count+15]
+        print filename
+        break
+
+outdir = outdir + filename + '/'
+
+if os.path.isdir(outdir):
     pass
 else:
-    os.mkdir(outdir + dat_name)
+    os.mkdir(outdir)
 
-for corr in range(ncorr):
-
-    folded_corr = comm.gather(folded_arr[:, np.newaxis, corr, :, :], root=0)
-    if jj == 0:
-        print "Done gathering arrays for corr", corr
-        final_list.append(np.concatenate(folded_corr, axis=2))
-
+#print outdir+dat_name
 times_actually_full = comm.gather(time_full, root=0)
+for freq in range(n_freq_bins):
 
-if jj==0:
-    final_array = np.concatenate(final_list, axis=1)
-    times = np.concatenate(times_actually_full)
-    print times.shape,"IS DA SHAPE OF DA TIMES"
-    
-    count=0
-    print args.data_dir
-    for letter in args.data_dir:
-        count+=1
-        if letter=='2':
-            filename=args.data_dir[count-1:count+15]
-            print filename
-            break
+    folded_corr = comm.gather(folded_arr[freq, :, np.newaxis], root=0)
+  
+    if jj == 0:
+        print "Done gathering arrays for freq", freq
+#        final_list.append(np.concatenate(folded_corr, axis=1))
+        final_arr = np.concatenate(folded_corr, axis=1).reshape(ncorr, -1, args.n_phase_bins)
+        outfile = outdir + args.pulsar + filename + np.str(freq_int) + np.str(args.add_tag) + np.str(freq) + '.hdf5'
 
-    outfile = outdir + args.pulsar + filename + np.str(freq_int) + fpga_tag + np.str(args.add_tag) + '.hdf5'
-    
-    if os.path.isfile(outfile):
-        os.remove(outfile)
-    
-    print "Writing output to", outfile
-    f = h5py.File(outfile, 'w')
-    f.create_dataset('folded_arr', data=final_array) 
-    f.create_dataset('times', data=times)
-    f.close()
+        if os.path.isfile(outfile):
+            os.remove(outfile)
+
+        print "HERE",final_arr.shape
+        print "Writing output to", outfile, "array has shape"#, folded_corr.shape
+#        print np.concatenate(final_list).shape
+        f = h5py.File(outfile, 'w')
+        f.create_dataset('folded_arr', data=final_arr)
+     #   f.create_dataset('times', data=times)
+        f.close()
+
 
