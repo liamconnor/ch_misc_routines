@@ -167,3 +167,25 @@ def calc_baseline(feed_loc):
     
     return del_x, del_y, np.sqrt(del_x**2 + del_y**2)
     
+def svd_model(arr):
+    """
+    Take time/freq visibilities SVD, zero out all but the largest mode, multiply original data by complex conjugate
+    
+    Parameters
+    ==========
+    arr: np.array
+       Time/freq visiblity matrix
+
+    Return
+    ======
+    Original data array multiplied by the largest SVD mode
+    """
+    u,s,w = np.linalg.svd(arr)
+    s[1:] = 0.0
+    S = np.zeros([len(s), w.shape[0]], np.complex128)
+    S[:len(s), :len(s)] = np.diag(s)
+        
+    model = np.dot(np.dot(u, S), w)
+    
+    return arr * np.conj(model) 
+
