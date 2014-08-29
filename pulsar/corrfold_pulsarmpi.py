@@ -47,7 +47,7 @@ jj = comm.rank
 print "Starting chunk %i of %i" % (jj+1, nchunks)
 print "Getting", file_chunk*jj, ":", file_chunk*(jj+1)
 
-corrs = [misc.feed_map(i, 3, 16) for i in range(8)] #+ [misc.feed_map(i, 3, 16) for i in range(16)] 
+corrs = [misc.feed_map(i, 7, 16) for i in range(16)] #+ [misc.feed_map(i, 3, 16) for i in range(16)] 
 print corrs
 
 data_arr, time_full, RA, fpga_count = misc.get_data(list[file_chunk*jj:file_chunk*(jj+1)])[1:]
@@ -119,7 +119,7 @@ for freq in range(n_freq_bins):
     folded_corr = comm.gather(folded_arr[freq, :, np.newaxis], root=0)
   
     if jj == 0:
-        print "Done gathering arrays for freq", freq
+        print "Done gathering arrays for freq", freq, folded_corr[0].shape, len(folded_corr)
 #        final_list.append(np.concatenate(folded_corr, axis=1))
         final_arr = np.concatenate(folded_corr, axis=1).reshape(ncorr, -1, args.n_phase_bins)
         outfile = outdir + args.pulsar + filename + np.str(freq_int) + np.str(args.add_tag) + np.str(freq) + '.hdf5'
@@ -129,7 +129,7 @@ for freq in range(n_freq_bins):
 
         print "HERE",final_arr.shape
         print "Writing output to", outfile, "array has shape"#, folded_corr.shape
-#        print np.concatenate(final_list).shape
+
         f = h5py.File(outfile, 'w')
         f.create_dataset('folded_arr', data=final_arr)
      #   f.create_dataset('times', data=times)
