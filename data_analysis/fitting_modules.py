@@ -79,7 +79,8 @@ def beam_fit(Data, RA, correlations=[0], dec=0):
     """
     
     beam_fit = np.zeros([Data.shape[0], Data.shape[1], 5])
-
+    print "Here"
+    n_freq = Data.shape[0]
     print "Number of frequencies:", n_freq
     
     for freq_ind in range(n_freq):

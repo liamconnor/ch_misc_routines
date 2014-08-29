@@ -104,8 +104,8 @@ def fft_data(arr, ft='lag'):
     =======
     Returns the fft array that was asked for in ft argument.
     """
-    freq_window = np.hanning(arr.shape[0])[:, np.newaxis] 
-    time_window = np.hanning(arr.shape[-1])[np.newaxis, :]
+    freq_window = np.hanning(arr.shape[0])[:, np.newaxis]  * 0.0 + 1.0
+    time_window = np.hanning(arr.shape[-1])[np.newaxis, :] * 0.0 + 1.0
 
     if ft=='lag':
         return np.fft.fftshift(np.fft.fft(freq_window * arr, axis=0), axes=0)
@@ -124,7 +124,7 @@ def gain_time(data, n, save_as=False):
         A = gen_corr_matrix(data_mean[:, i], n)
         eval, evec = np.linalg.eigh(A)
         gd[:, i] = eval[-1]**0.5 * evec[:, -1] 
-    
+        
     if save_as:
         f = h5py.File(save_as,'w')
         f.create_dataset('gain_time', data=gd)
@@ -132,6 +132,45 @@ def gain_time(data, n, save_as=False):
         
     return gd
     
+def iterate_sol(data, nfeed):
+    auto_ind = []
+    [auto_ind.append(feed_map(i,i,16)) for i in range(16)]
+    print auto_ind
+
+    for ii in range(2):
+        print "Iteration %d" % ii
+        gain_arr, eval_arr = solve_gain(data, nfeed)
+        data[:, auto_ind] = abs(gain_arr)**2
+        
+    return gain_arr, eval_arr
+
+def solve_gain(data, nfeed, save_as=False):
+    gain_arr = np.zeros([data.shape[0], nfeed, 2, data.shape[-1]], np.complex128)
+    eval_arr = np.zeros([data.shape[0], nfeed, data.shape[-1]], np.float64)
+
+    for nu in range(data.shape[0]):
+        if (nu%64)==0:
+            print "Freq %d" % nu
+        for tt in range(data.shape[-1]):
+            corr_arr = gen_corr_matrix(data[nu, :, tt], nfeed)
+            corr_arr[np.diag_indices(nfeed)] = 0.0
+            corr_arr[:,9] = 0.0
+            corr_arr[9] = 0.0 
+
+            evl, evec = np.linalg.eigh(corr_arr)
+
+#            if tt==data.shape[-1]/2:
+#                print evl[-1] / evl[-2]
+            
+            #eval_arr[nu, tt] = evl[-1] / evl[-2]
+            eval_arr[nu, :, tt] = evl
+            gain_arr[nu, :, 0, tt] = evl[-1]**0.5 * evec[:, -1]
+            gain_arr[nu, :, 1, tt] = evl[-2]**0.5 * evec[:, -2]
+            gain_arr *= np.sign(gain_arr[:,0,np.newaxis]) # Demand that the first antenna is positive
+
+    return gain_arr, eval_arr        
+            
+
 def imli(arr, vmax=None, vmin=None):
     if not vmax:
         vmax=arr.max()
@@ -187,5 +226,6 @@ def svd_model(arr):
         
     model = np.dot(np.dot(u, S), w)
     
-    return arr * np.conj(model) 
+#    return arr * np.conj(model) 
+    return arr * np.exp(-1j * np.angle(model))
 
