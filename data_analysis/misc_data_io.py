@@ -206,7 +206,7 @@ def calc_baseline(feed_loc):
     
     return del_x, del_y, np.sqrt(del_x**2 + del_y**2)
     
-def svd_model(arr):
+def svd_model(arr, phase_only=False):
     """
     Take time/freq visibilities SVD, zero out all but the largest mode, multiply original data by complex conjugate
     
@@ -225,7 +225,10 @@ def svd_model(arr):
     S[:len(s), :len(s)] = np.diag(s)
         
     model = np.dot(np.dot(u, S), w)
-    
-#    return arr * np.conj(model) 
-    return arr * np.exp(-1j * np.angle(model))
+
+    if phase_only==True:
+        return arr * np.exp(-1j * np.angle(model))
+    else:
+        return arr * np.conj(model)        
+
 
