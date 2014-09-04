@@ -81,7 +81,7 @@ def iterate_sol(data, nfeed):
 
      return gain_arr, eval_arr
 
-def solve_gain(data, nfeed, save_as=False, feed_loc=False):
+def solve_gain(data, nfeed, feed_loc=False):
      """
      Steps through each time/freq pixel, generates a Hermitian (nfeed,nfeed)
      matrix and calculates gains from its largest eigenvector.
@@ -117,20 +117,22 @@ def solve_gain(data, nfeed, save_as=False, feed_loc=False):
                                                            
                eval_arr[nu, :, tt] = evl
                gain_arr[nu, :, tt] = evl[-1]**0.5 * evec[:, -1]
-#               gain_arr *= np.sign(gain_arr[:, 0, np.newaxis]) # Demand that the first antenna is positive          
 
      return gain_arr, eval_arr
 
 
 if __name__ == '__main__':
-#     files = "/scratch/k/krs/jrs65/chime_archive/20140812T001543Z_first9ucrate_corr/0063*"
-     files = "/scratch/k/krs/connor/0005*"
+     import argparse
+     
+     parser = argparse.ArgumentParser(description="Reads in point source transit and solve for complex gains")
+     parser.add_argument("files", help=".h5 files to read")
+     args = parser.parse_args()
 
      feed_locx = [0,1,2,12,13,14,15]
      feed_locy = [4,5,6,8,9,10,11]
-
-     X, vis, t, RA, fpga_count = misc.get_data(files)
-     vis = vis[..., 175:450] #- np.median(vis[..., 175:450, np.newaxis], axis=-2)
+     print args.files
+     X, vis, t, RA, fpga_count = misc.get_data(args.files + '*')
+     vis = vis #- np.median(vis[..., 175:450, np.newaxis], axis=-2)
      print "Read in data with shape:", vis.shape
 
      print "Starting xpol eigendecomposition"
