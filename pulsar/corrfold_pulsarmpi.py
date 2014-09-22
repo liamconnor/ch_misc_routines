@@ -16,7 +16,7 @@ parser.add_argument("pulsar", help="Name of pulsar e.g. B0329+54")
 parser.add_argument("--n_phase_bins", help="Number of pulsar gates with which to fold", default=32, type=int)
 parser.add_argument("--time_int", help="Number of samples to integrate over", default=1000, type=int)
 parser.add_argument("--freq_int", help="Number of frequencies to integrate over", default=1, type=int)
-parser.add_argument("--ncorr", help="Number of correlations to include", default=36, type=int)
+parser.add_argument("--nfeeds", help="Number of feeds in acquisition", default=16, type=int)
 parser.add_argument("--use_fpga", help="Use fpga counts instead of timestamps", default=0, type=int)
 parser.add_argument("--add_tag", help="Add tag to outfile name to help identify data product", default='')
 parser.add_argument("--nnodes", help='Number of nodes', default=30, type=int)
@@ -28,10 +28,11 @@ sources = np.loadtxt('/home/k/krs/connor/code/ch_misc_routines/pulsar/sources2.t
 RA_src, dec, DM, p1 = np.float(sources[sources[:,0]==args.pulsar][0][1]), np.float(sources[sources[:,0]==args.pulsar][0][2]), np.float(sources[sources[:,0]==args.pulsar][0][3]),\
     np.float(sources[sources[:,0]==args.pulsar][0][4])
 
+print "RA,dec,DM,period:", np.degrees(RA_src), np.degrees(dec), DM, p1
 nnodes = args.nnodes
 file_chunk = args.chunksize
 
-ncorr = args.ncorr
+nfeeds = args.nfeeds
 dat_name = args.data_dir[-16:]
 
 list = glob.glob(args.data_dir + '/*h5*')
@@ -47,11 +48,23 @@ jj = comm.rank
 print "Starting chunk %i of %i" % (jj+1, nchunks)
 print "Getting", file_chunk*jj, ":", file_chunk*(jj+1)
 
-corrs = [misc.feed_map(i, 7, 16) for i in range(16)] #+ [misc.feed_map(i, 3, 16) for i in range(16)] 
-print corrs
+corrs = [misc.feed_map(i, 3, nfeeds) for i in range(nfeeds)] + [misc.feed_map(i, 7, nfeeds) for i in range(nfeeds)] 
+corrs_auto = [misc.feed_map(i, i, nfeeds) for i in range(nfeeds)]
+ncorr = len(corrs)    
 
-data_arr, time_full, RA, fpga_count = misc.get_data(list[file_chunk*jj:file_chunk*(jj+1)])[1:]
-data_arr = data_arr[:, corrs, :]
+
+if jj==0:
+    print "Using correlations", corrs
+    print "with autos:", corrs_auto
+
+print "Hello!"
+data_arr_full, time_full, RA, fpga_count = misc.get_data(list[file_chunk*jj:file_chunk*(jj+1)])[1:]
+data_arr = data_arr_full[:, corrs]
+
+print "Now dividing by autos"
+data_arr[:, corrs[:nfeeds]] /= np.sqrt((abs(data_arr[:, corrs_auto])**2) * abs(data_arr[:, corrs_auto[3], np.newaxis])**2)
+data_arr[:, corrs[nfeeds:]] /= np.sqrt((abs(data_arr[:, corrs_auto])**2) * abs(data_arr[:, corrs_auto[7], np.newaxis])**2)
+
 
 ntimes = len(time_full)
 time  = time_full
@@ -64,8 +77,9 @@ fpga_tag = ''
 outdir = '/scratch/k/krs/connor/chime/calibration/' 
 
 if args.use_fpga==1:
-    time = (fpga_count - fpga_count[0]) * (np.diff(time_full)[0]) / np.diff(fpga_count)[0]
-    print "We're going with the fpga counts:", np.median(np.diff(fpga_count))
+    dt = 2048. / 800e6
+    time = (fpga_count) * dt
+    print "We're going with the fpga counts"
     fpga_tag = 'fpga'
 
 print "The median time diff is:", np.median(np.diff(time))
@@ -74,7 +88,6 @@ n_freq_bins = np.round( data_arr.shape[0] / freq_int )
 n_time_bins = np.round( data_arr.shape[-1] / time_int )
 n_phase_bins = args.n_phase_bins
 
-ncorr = len(corrs)    
 folded_arr = np.zeros([n_freq_bins, ncorr, n_time_bins, n_phase_bins], np.complex128)
 
 print "folded pulsar array", jj, "has shape", folded_arr.shape
@@ -82,8 +95,8 @@ print "folded pulsar array", jj, "has shape", folded_arr.shape
 RC = chp.RFI_Clean(data_arr, time)
 RC.dec = dec
 RC.RA = RA
-RC.RA_src = 0.934041310805 # Obvi need to change this.
-RC.corrs = corrs
+RC.RA_src = np.deg2rad(RA_src)
+RC.corrs = corrs#[: 2 * ncorr / 3] # Need only to fold the CHIME/26m correlations. 
 RC.frequency_clean()
 RC.fringestop() 
 
@@ -113,7 +126,8 @@ else:
     os.mkdir(outdir)
 
 #print outdir+dat_name
-times_actually_full = comm.gather(time_full, root=0)
+times_actually_full = comm.gather(time, root=0)
+
 for freq in range(n_freq_bins):
 
     folded_corr = comm.gather(folded_arr[freq, :, np.newaxis], root=0)
@@ -122,6 +136,7 @@ for freq in range(n_freq_bins):
         print "Done gathering arrays for freq", freq, folded_corr[0].shape, len(folded_corr)
 #        final_list.append(np.concatenate(folded_corr, axis=1))
         final_arr = np.concatenate(folded_corr, axis=1).reshape(ncorr, -1, args.n_phase_bins)
+        times = np.concatenate(times_actually_full)
         outfile = outdir + args.pulsar + filename + np.str(freq_int) + np.str(args.add_tag) + np.str(freq) + '.hdf5'
 
         if os.path.isfile(outfile):
@@ -132,7 +147,7 @@ for freq in range(n_freq_bins):
 
         f = h5py.File(outfile, 'w')
         f.create_dataset('folded_arr', data=final_arr)
-     #   f.create_dataset('times', data=times)
+        f.create_dataset('times', data=times)
         f.close()
 
 
