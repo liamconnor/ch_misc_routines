@@ -15,8 +15,7 @@ class PulsarPipeline:
 
         if self.ntimes != len(self.time_stamps):
             print self.ntimes, "not equal to", len(self.time_stamps)
-            raise Exception('Number of samples disagree')
-         
+            raise Exception('Number of samples disagree')         
         
         self.RA = None
         self.dec = None
@@ -94,9 +93,9 @@ class PulsarPipeline:
    
         data = self.data[start_chan:end_chan, :, start_samp:end_samp].copy()
 
-        for corr in range(self.ncorr):
+#        for corr in range(self.ncorr):
             #data[:, corr, :] /= running_mean(data[:, corr, :])
-            data[:, corr, :] /= (abs(data[:,corr]).mean(axis=-1)[:, np.newaxis] / freq[:, np.newaxis]**(-0.8))
+#            data[:, corr, :] /= (abs(data[:,corr]).mean(axis=-1)[:, np.newaxis] / freq[:, np.newaxis]**(-0.8))
 
         delays = self.dm_delays(dm, f_ref)[start_chan:end_chan, np.newaxis, np.newaxis] * np.ones([1, data.shape[1], data.shape[-1]])
         dedispersed_times = times[np.newaxis, np.newaxis, :] * np.ones([data.shape[0], data.shape[1], 1]) - delays
@@ -228,10 +227,10 @@ class PulsarPipeline:
 class RFI_Clean(PulsarPipeline):
 
     always_cut = range(111,138) + range(889,893) + range(856,860) + \
-        range(873,877) + range(583,600) + range(552,568) + range(630,645) +\
-        range(678,690) + range(753, 768) + range(783, 798)
+        range(873,877) + range(583,600) + range(552,569) + range(630,645) +\
+        range(675,692) + range(753, 768) + range(783, 798) + [267,268,273]
     
-    def frequency_clean(self, threshold=1e6):
+    def frequency_clean(self, threshold=1e6, broadband_only=True):
         """
         Does an RFI cut in frequency by normalizing by nu**4 to flatten bandpass and then cutting 
         above some threshold. 
@@ -249,13 +248,15 @@ class RFI_Clean(PulsarPipeline):
         RFI-cleaned data
 
         """
-        data = abs(self.data.copy())
-        freq = (self.freq)[:, np.newaxis]
-        data_freq = data.mean(axis=-1)
-        data_freq_norm = data_freq / data_freq.mean() * freq**(4) / freq[-1]**4
-        mask = data_freq_norm > threshold
+        if broadband_only==False:
+            data = abs(self.data.copy())
+            freq = (self.freq)[:, np.newaxis]
+            data_freq = data.mean(axis=-1)
+            data_freq_norm = data_freq / data_freq.mean() * freq**(4) / freq[-1]**4
+            mask = data_freq_norm > threshold
 
-        self.data[np.where(mask)[0], :] = 0.0 
+            self.data[np.where(mask)[0], :] = 0.0 
+
         self.data[self.always_cut, :] = 0.0
         print "Finished cutting spectral RFI"
         
@@ -321,7 +322,7 @@ def find_ongate(arr, ref_prod=[45, 91]):
     """
     dat_x = abs(arr[:, ref_prod[0]]).mean(axis=0)
     dat_y = abs(arr[:, ref_prod[1]]).mean(axis=0)
-    
+
     bin_x = np.argmax(dat_x, axis=1)
     bin_y = np.argmax(dat_y, axis=1)
 
@@ -345,7 +346,7 @@ def correct_phase_bins(arr, bin_tup):
     arr:
          Pulsar data array realigned such that the pulses are in the central phase bin
     """
-    data = arr.copy()
+    data = arr#.copy()
     ntimes = data.shape[2]
     nbins = data.shape[-1]
     bin_x, bin_y, bin_diff = bin_tup
@@ -363,6 +364,14 @@ def correct_phase_bins(arr, bin_tup):
     return data
 
 
+def derotate_far(data, RM):
+    """
+    Undoes Faraday rotation
+    """
+    freq = np.linspace(800, 400, data.shape[0]) * 1e6
+    phase = np.exp(-2j * RM * (3e8 / freq)**2)
     
-    
-    
+    if len(data.shape)==3:
+        phase = phase[:, np.newaxis]
+
+    return data * phase[:, np.newaxis]
