@@ -28,13 +28,14 @@ RA_src, dec, DM, p1 = np.float(sources[sources[:,0]==args.pulsar][0][1]), np.flo
 ncorr = args.ncorr
 dat_name = args.data_dir[-16:]
 
-list = glob.glob(args.data_dir + '/*h5*')
+list = glob.glob(args.data_dir + '*h5*')
 list.sort()
 list = list[0:0 + args.nfiles]
 
 print "Total of %i files" % len(list)
 
 corrs = [misc.feed_map(i, i, 16) for i in range(16)] #+ [misc.feed_map(i, 3, 16) for i in range(16)] 
+corrs=[45,91]
 
 data_arr, time_full, RA, fpga_count = misc.get_data(list)[1:]
 data_arr = data_arr[:, corrs, :]
@@ -45,9 +46,19 @@ time  = time_full
 time_int = args.time_int
 freq_int = args.freq_int 
 
+#fpga_count=[]
+#for file in list:
+#    f = h5py.File(file, 'r')
+#    fpga_count.append(f['timestamp'].value['fpga_count'])
+
+#print "lenfpga", len(fpga_count)
+#fpga_count = np.concatenate(fpga_count)
+#time = (fpga_count - fpga_count[0]) * (np.diff(time_full)[0]) / np.diff(fpga_count)[0]
+#print fpga_count.shape
 
 if args.use_fpga==1:
-    time = (fpga_count - fpga_count[0]) * (np.diff(time_full)[0]) / np.diff(fpga_count)[0]
+    dt = 2048. / 800e6
+    time = (fpga_count - fpga_count[0]) * dt
     print "We're going with the fpga counts:", np.median(np.diff(fpga_count))
     fpga_tag = 'fpga'
 
@@ -74,12 +85,12 @@ for freq in range(n_freq_bins):
          folded_arr[freq, :, tt, :] = RC.fold_pulsar(p1, DM, nbins=n_phase_bins, \
                     start_chan=freq_int*freq, end_chan=freq_int*(freq+1), start_samp=time_int*tt, end_samp=time_int*(tt+1), f_ref=400.0)
 
-if os.path.isdir(outdir + dat_name):
-    pass
-else:
-    os.mkdir(outdir + dat_name)
+#if os.path.isdir(outdir + dat_name):
+#    pass
+#else:
+#    os.mkdir(outdir + dat_name)
 
-outfile = '/home/k/krs/connor/out_test.hdf5'
+outfile = '/home/k/krs/connor/out_test' + args.add_tag + '.hdf5'
 print "Writing output to", outfile
 del_t = (time[-1] - time[0]) / 60.0
 print "Folded %f minutes of data" % del_t

@@ -93,9 +93,9 @@ class PulsarPipeline:
    
         data = self.data[start_chan:end_chan, :, start_samp:end_samp].copy()
 
-#        for corr in range(self.ncorr):
+        for corr in range(self.ncorr):
             #data[:, corr, :] /= running_mean(data[:, corr, :])
-#            data[:, corr, :] /= (abs(data[:,corr]).mean(axis=-1)[:, np.newaxis] / freq[:, np.newaxis]**(-0.8))
+            data[:, corr, :] /= (abs(data[:,corr]).mean(axis=-1)[:, np.newaxis] / freq[:, np.newaxis]**(-0.8))
 
         delays = self.dm_delays(dm, f_ref)[start_chan:end_chan, np.newaxis, np.newaxis] * np.ones([1, data.shape[1], data.shape[-1]])
         dedispersed_times = times[np.newaxis, np.newaxis, :] * np.ones([data.shape[0], data.shape[1], 1]) - delays
@@ -110,7 +110,7 @@ class PulsarPipeline:
                 vals = data_corr[bins_corr==i]
                 profile[corr, i] += vals[vals!=0.0].mean()
         
-        return profile#.mean(axis=1)
+        return profile
     
     def fold2(self, p0, dm, nbins=32, time_rebin=1000, freq_rebin=1, **kwargs):
 
@@ -127,7 +127,6 @@ class PulsarPipeline:
         else: f_ref = freq[0]
 
         nfreq = end_chan - start_chan
-        print nfreq
         nt = self.ntimes / time_rebin
         nf = nfreq / freq_rebin
 
@@ -162,27 +161,6 @@ class PulsarPipeline:
         return folded_arr
                     
 
-    def fringe_stop(self):
-        """
-        Fringestops EW data so that we can collapse in time. What this should do is take in 
-        a whole correlation array and have a table for d_EW
-
-        Parameters
-        ----------
-        Returns
-        ---------- 
-        """
-        data = self.data.copy()
-        data = data - np.mean(data, axis=-1)[:, :, np.newaxis]
-        freq = (1e6 * self.freq)[:, np.newaxis, np.newaxis] # Frequency in Hz
-        RA = (np.deg2rad(self.RA * np.cos(np.deg2rad(self.dec))))[np.newaxis, np.newaxis, :]
-
-        print "Fringestopping object at (RA,DEC):", np.rad2deg(RA).mean(), self.dec
-
-        phase = np.exp(-2*np.pi * 1j * self.d_EW * freq / 3e8 * np.sin(RA))
-        
-        self.data = data * phase    
-
     def fringestop(self):
         data = self.data.copy()
         data = data - np.mean(data, axis=-1)[:, :, np.newaxis]
@@ -190,7 +168,6 @@ class PulsarPipeline:
         ha = np.deg2rad(self.RA[np.newaxis, np.newaxis, :]) - self.RA_src
         dec = np.deg2rad(self.dec)
         u, v = self.get_uv()
-        print "second", u[0, :, 0]
         phase = self.fringestop_phase(ha, np.deg2rad(chime_lat), dec, u, v)
         self.data = data * phase
 

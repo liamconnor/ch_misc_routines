@@ -13,14 +13,14 @@ print comm.rank, comm.size
 parser = argparse.ArgumentParser(description="This script RFI-cleans, fringestops, and folds the pulsar data.")
 parser.add_argument("data_dir", help="Directory with hdf5 data files")
 parser.add_argument("pulsar", help="Name of pulsar e.g. B0329+54")
-parser.add_argument("--n_phase_bins", help="Number of pulsar gates with which to fold", default=32, type=int)
-parser.add_argument("--time_int", help="Number of samples to integrate over", default=1000, type=int)
-parser.add_argument("--freq_int", help="Number of frequencies to integrate over", default=1, type=int)
-parser.add_argument("--nfeeds", help="Number of feeds in acquisition", default=16, type=int)
-parser.add_argument("--use_fpga", help="Use fpga counts instead of timestamps", default=0, type=int)
-parser.add_argument("--add_tag", help="Add tag to outfile name to help identify data product", default='')
-parser.add_argument("--nnodes", help='Number of nodes', default=30, type=int)
-parser.add_argument("--chunksize", help='Number of files to read per node', default=10, type=int)
+parser.add_argument("-n_phase_bins", help="Number of pulsar gates with which to fold", default=32, type=int)
+parser.add_argument("-time_int", help="Number of samples to integrate over", default=1000, type=int)
+parser.add_argument("-freq_int", help="Number of frequencies to integrate over", default=1, type=int)
+parser.add_argument("-nfeeds", help="Number of feeds in acquisition", default=16, type=int)
+parser.add_argument("-use_fpga", help="Use fpga counts instead of timestamps", default=1, type=int)
+parser.add_argument("-add_tag", help="Add tag to outfile name to help identify data product", default='')
+parser.add_argument("-nnodes", help='Number of nodes', default=30, type=int)
+parser.add_argument("-chunksize", help='Number of files to read per node', default=10, type=int)
 args = parser.parse_args()
 
 sources = np.loadtxt('/home/k/krs/connor/code/ch_misc_routines/pulsar/sources2.txt', dtype=str)[1:]
@@ -28,7 +28,6 @@ sources = np.loadtxt('/home/k/krs/connor/code/ch_misc_routines/pulsar/sources2.t
 RA_src, dec, DM, p1 = np.float(sources[sources[:,0]==args.pulsar][0][1]), np.float(sources[sources[:,0]==args.pulsar][0][2]), np.float(sources[sources[:,0]==args.pulsar][0][3]),\
     np.float(sources[sources[:,0]==args.pulsar][0][4])
 
-print "RA,dec,DM,period:", np.degrees(RA_src), np.degrees(dec), DM, p1
 nnodes = args.nnodes
 file_chunk = args.chunksize
 
@@ -54,16 +53,20 @@ ncorr = len(corrs)
 
 
 if jj==0:
+    print "RA, dec, DM, period:", RA_src, dec, DM, p1
     print "Using correlations", corrs
     print "with autos:", corrs_auto
+    
 
-print "Hello!"
 data_arr_full, time_full, RA, fpga_count = misc.get_data(list[file_chunk*jj:file_chunk*(jj+1)])[1:]
 data_arr = data_arr_full[:, corrs]
 
 print "Now dividing by autos"
-data_arr[:, corrs[:nfeeds]] /= np.sqrt((abs(data_arr[:, corrs_auto])**2) * abs(data_arr[:, corrs_auto[3], np.newaxis])**2)
-data_arr[:, corrs[nfeeds:]] /= np.sqrt((abs(data_arr[:, corrs_auto])**2) * abs(data_arr[:, corrs_auto[7], np.newaxis])**2)
+
+print np.sqrt((abs(data_arr_full[:, corrs_auto])**2) * abs(data_arr_full[:, corrs_auto[3], np.newaxis])**2).shape
+
+data_arr[:, :nfeeds] /= np.sqrt((abs(data_arr_full[:, corrs_auto])**2) * abs(data_arr_full[:, corrs_auto[3], np.newaxis])**2)
+data_arr[:, nfeeds:] /= np.sqrt((abs(data_arr_full[:, corrs_auto])**2) * abs(data_arr_full[:, corrs_auto[7], np.newaxis])**2)
 
 
 ntimes = len(time_full)
@@ -72,17 +75,13 @@ time  = time_full
 time_int = args.time_int
 freq_int = args.freq_int 
 
-fpga_tag = ''
-
 outdir = '/scratch/k/krs/connor/chime/calibration/' 
 
 if args.use_fpga==1:
     dt = 2048. / 800e6
     time = (fpga_count) * dt
     print "We're going with the fpga counts"
-    fpga_tag = 'fpga'
 
-print "The median time diff is:", np.median(np.diff(time))
 
 n_freq_bins = np.round( data_arr.shape[0] / freq_int )
 n_time_bins = np.round( data_arr.shape[-1] / time_int )
@@ -96,7 +95,9 @@ RC = chp.RFI_Clean(data_arr, time)
 RC.dec = dec
 RC.RA = RA
 RC.RA_src = np.deg2rad(RA_src)
+print RC.data.shape, "ZERO"
 RC.corrs = corrs#[: 2 * ncorr / 3] # Need only to fold the CHIME/26m correlations. 
+print RC.data.shape, "TWO"
 RC.frequency_clean()
 RC.fringestop() 
 
@@ -125,7 +126,6 @@ if os.path.isdir(outdir):
 else:
     os.mkdir(outdir)
 
-#print outdir+dat_name
 times_actually_full = comm.gather(time, root=0)
 
 for freq in range(n_freq_bins):
@@ -142,7 +142,6 @@ for freq in range(n_freq_bins):
         if os.path.isfile(outfile):
             os.remove(outfile)
 
-        print "HERE",final_arr.shape
         print "Writing output to", outfile, "array has shape"#, folded_corr.shape
 
         f = h5py.File(outfile, 'w')
