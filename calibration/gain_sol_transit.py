@@ -9,14 +9,14 @@ def feed_map(feed_i, feed_j, nfeed):
      Calculates correlation index between two feeds
 
      Parameters
-     ==========
+     ----------
      feed_i, feed_j: int 
           Feed numbers counting from 0
      nfeed: int 
           Number of feeds (duhhh)
 
      Returns
-     =======
+     -------
      Correlation index
      """
      if feed_i > feed_j:
@@ -29,14 +29,14 @@ def gen_corr_matrix(data, nfeed, feed_loc=False):
      Generates Hermitian (nfeed, nfeed) correlation matrix from unique correlations
 
      Parameters
-     ==========
+     ----------
      data: (nfreq, ncorr, ntimes) np.complex128 arr
           Visibility array to be decomposed
      nfeed: int 
           Number of feeds (duhhh)
 
      Returns
-     =======
+     -------
      Hermitian correlation matrix
      """
 
@@ -58,14 +58,14 @@ def iterate_sol(data, nfeed):
      using the previous solution to fill in autocorrelations.
      
      Parameters
-     ==========
+     ----------
      data: (nfreq, ncorr, ntimes) np.complex128 arr
           Visibility array to be decomposed
      nfeed: int 
           Number of feeds in configuration
 
      Returns
-     =======
+     -------
      gain_arr: (nfreq, nfeed, ntimes) np.complex128
           Gain solution for each feed, time, and frequency
      eval_arr: (nfreq, ntimes)
@@ -87,14 +87,14 @@ def solve_gain(data, nfeed, feed_loc=False):
      matrix and calculates gains from its largest eigenvector.
 
      Parameters
-     ==========
+     ----------
      data: (nfreq, ncorr, ntimes) np.complex128 arr
           Visibility array to be decomposed
      nfeed: int 
           Number of feeds in configuration
 
      Returns
-     =======
+     -------
      gain_arr: (nfreq, nfeed, ntimes) np.complex128
           Gain solution for each feed, time, and frequency
      eval_arr: (nfreq, ntimes)
