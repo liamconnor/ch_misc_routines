@@ -27,7 +27,8 @@ args = parser.parse_args()
 src = args.src
 
 # Create a dictionary with each fitting object's information in the form: {"Obj": [RA_min, RA_max, Declination]}.
-celestial_object = { "CasA": [344, 358, 58.83, ch_util.ephemeris.CasA], "TauA": [77, 87, 83.6, ch_util.ephemeris.TauA], "CygA": [297, 302, 40.73]}
+celestial_object = { "CasA": [344, 358, 58.83, ch_util.ephemeris.CasA], 
+                         "TauA": [77, 87, 83.6, ch_util.ephemeris.TauA], "CygA": [297, 302, 40.73]}
 
 st = args.start_date
 end = args.stop_date
