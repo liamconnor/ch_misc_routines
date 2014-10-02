@@ -31,12 +31,11 @@ class PulsarPipeline:
         self.ntimes = self.data.shape[-1]
         self.ncorr = self.data.shape[1]
         self.corrs = range(self.ncorr)
-        
+        self.ln = 29
         print "Data array has shape:", self.data.shape
     
-
     def get_uv(self):
-        feed_loc = np.loadtxt('/home/k/krs/connor/code/ch_misc_routines/pulsar/feed_loc_layout29.txt')
+        feed_loc = np.loadtxt('/home/k/krs/connor/code/ch_misc_routines/pulsar/feed_loc_layout' + self.ln + '.txt')
         d_EW, d_NS = misc.calc_baseline(feed_loc)[:2]
         u = d_EW[np.newaxis, self.corrs, np.newaxis] * self.freq[:, np.newaxis, np.newaxis] * 1e6 / (3e8)
         v = d_NS[np.newaxis, self.corrs, np.newaxis] * self.freq[:, np.newaxis, np.newaxis] * 1e6 / (3e8)
@@ -93,9 +92,9 @@ class PulsarPipeline:
    
         data = self.data[start_chan:end_chan, :, start_samp:end_samp].copy()
 
-        for corr in range(self.ncorr):
+#        for corr in range(self.ncorr):
             #data[:, corr, :] /= running_mean(data[:, corr, :])
-            data[:, corr, :] /= (abs(data[:,corr]).mean(axis=-1)[:, np.newaxis] / freq[:, np.newaxis]**(-0.8))
+#            data[:, corr, :] /= (abs(data[:,corr]).mean(axis=-1)[:, np.newaxis] / freq[:, np.newaxis]**(-0.8))
 
         delays = self.dm_delays(dm, f_ref)[start_chan:end_chan, np.newaxis, np.newaxis] * np.ones([1, data.shape[1], data.shape[-1]])
         dedispersed_times = times[np.newaxis, np.newaxis, :] * np.ones([data.shape[0], data.shape[1], 1]) - delays
@@ -170,6 +169,7 @@ class PulsarPipeline:
         u, v = self.get_uv()
         phase = self.fringestop_phase(ha, np.deg2rad(chime_lat), dec, u, v)
         self.data = data * phase
+        return data, phase
 
     def fringestop_phase(self, ha, lat, dec, u, v):
         """Return the phase required to fringestop. All angle inputs are radians. 

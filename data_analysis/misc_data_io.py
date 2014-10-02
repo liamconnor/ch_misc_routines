@@ -2,7 +2,7 @@ import numpy as np
 import ch_util.andata
 import ch_util.ephemeris as eph
 import h5py
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 
 chand = ch_util.andata.AnData()
 
@@ -206,7 +206,7 @@ def calc_baseline(feed_loc):
     
     return del_x, del_y, np.sqrt(del_x**2 + del_y**2)
     
-def svd_model(arr, phase_only=False):
+def svd_model(arr, phase_only=True):
     """
     Take time/freq visibilities SVD, zero out all but the largest mode, multiply original data by complex conjugate
     

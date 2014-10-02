@@ -1,3 +1,4 @@
+
 import numpy as np
 import h5py
 import argparse
@@ -52,6 +53,9 @@ print "Done concatenating frequency files"
 psr_arrx = np.concatenate(psr_arrx)
 psr_arr26 = np.concatenate(psr_arr26)
 
+psr_arrx[np.isnan(psr_arrx)] = 0.0
+psr_arr26[np.isnan(psr_arr26)] = 0.0
+
 ntimes = psr_arrx.shape[-2]
 
 bin_tup = chp.find_ongate(psr_arr26, ref_prod=[0,1])
@@ -59,11 +63,14 @@ arr_corr = chp.correct_phase_bins(psr_arrx, bin_tup)
 arr_corr26 = chp.correct_phase_bins(psr_arr26, bin_tup)
 
 on_gate = arr_corr.shape[-1] / 2.
+
 #psr_vis = 0.80 * arr_corr[..., on_gate] + 0.10 * (arr_corr[..., on_gate+1] + arr_corr[..., on_gate-1]) -\
 #                0.5 * (arr_corr[..., on_gate+5:].mean(axis=-1) + arr_corr[..., :on_gate - 5].mean(axis=-1))
 
-psr_vis = 0.80 * arr_corr[..., on_gate] + 0.10 * (arr_corr[..., on_gate+1] + arr_corr[..., on_gate-1]) \
-    - 0.5 * (arr_corr[..., on_gate-2] + arr_corr[..., on_gate+2])
+#psr_vis = 0.80 * arr_corr[..., on_gate] + 0.10 * (arr_corr[..., on_gate+1] + arr_corr[..., on_gate-1]) \
+#    - 0.5 * (arr_corr[..., on_gate-5] + arr_corr[..., on_gate+5])
+
+#psr_vis = arr_corr.mean(-1)
 
 
 if args.svd==1:
@@ -71,7 +78,8 @@ if args.svd==1:
     print "Performing SVD on dynamic spectrum, rank %d" % rank
 else:
     print "Skipping SVD"
-    psr_vis_cal = psr_vis
+    #psr_vis_cal = psr_vis
+    psr_vis_cal = arr_corr
 
 outfile = args.data_file + np.str(rank) + args.outtag + ".hdf5"
 print "Writing to", outfile

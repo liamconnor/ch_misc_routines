@@ -1,10 +1,12 @@
-import numpy as np
-import ch_pulsar_analysis as chp
-import h5py
-import misc_data_io as misc
-import glob
 import os
+import glob
 import argparse
+
+import numpy as np
+import h5py
+
+import ch_pulsar_analysis as chp
+import misc_data_io as misc
 
 from mpi4py import MPI
 comm = MPI.COMM_WORLD
@@ -21,6 +23,7 @@ parser.add_argument("-use_fpga", help="Use fpga counts instead of timestamps", d
 parser.add_argument("-add_tag", help="Add tag to outfile name to help identify data product", default='')
 parser.add_argument("-nnodes", help='Number of nodes', default=30, type=int)
 parser.add_argument("-chunksize", help='Number of files to read per node', default=10, type=int)
+parser.add_argument("-ln", help='Layout number', default='29')
 args = parser.parse_args()
 
 sources = np.loadtxt('/home/k/krs/connor/code/ch_misc_routines/pulsar/sources2.txt', dtype=str)[1:]
@@ -47,10 +50,13 @@ jj = comm.rank
 print "Starting chunk %i of %i" % (jj+1, nchunks)
 print "Getting", file_chunk*jj, ":", file_chunk*(jj+1)
 
-corrs = [misc.feed_map(i, 3, nfeeds) for i in range(nfeeds)] + [misc.feed_map(i, 7, nfeeds) for i in range(nfeeds)] 
-corrs_auto = [misc.feed_map(i, i, nfeeds) for i in range(nfeeds)]
-ncorr = len(corrs)    
+x=3
+y=7
 
+corrs = [misc.feed_map(i, x, nfeeds) for i in range(nfeeds)] + [misc.feed_map(i, y, nfeeds) for i in range(nfeeds)] 
+corrs_auto = [misc.feed_map(i, i, nfeeds) for i in range(nfeeds)]
+
+ncorr = len(corrs)    
 
 if jj==0:
     print "RA, dec, DM, period:", RA_src, dec, DM, p1
@@ -63,10 +69,11 @@ data_arr = data_arr_full[:, corrs]
 
 print "Now dividing by autos"
 
-print np.sqrt((abs(data_arr_full[:, corrs_auto])**2) * abs(data_arr_full[:, corrs_auto[3], np.newaxis])**2).shape
+data_arr[:, :nfeeds] /= np.sqrt((abs(data_arr_full[:, corrs_auto].mean(axis=-1))
+                                 ) * abs(data_arr_full[:, corrs_auto[x], np.newaxis].mean(axis=-1)))[:,:,np.newaxis]
 
-data_arr[:, :nfeeds] /= np.sqrt((abs(data_arr_full[:, corrs_auto])**2) * abs(data_arr_full[:, corrs_auto[3], np.newaxis])**2)
-data_arr[:, nfeeds:] /= np.sqrt((abs(data_arr_full[:, corrs_auto])**2) * abs(data_arr_full[:, corrs_auto[7], np.newaxis])**2)
+data_arr[:, nfeeds:] /= np.sqrt((abs(data_arr_full[:, corrs_auto].mean(axis=-1))
+                                 ) * abs(data_arr_full[:, corrs_auto[y], np.newaxis].mean(axis=-1)))[:,:,np.newaxis]
 
 
 ntimes = len(time_full)
@@ -89,20 +96,19 @@ n_phase_bins = args.n_phase_bins
 
 folded_arr = np.zeros([n_freq_bins, ncorr, n_time_bins, n_phase_bins], np.complex128)
 
-print "folded pulsar array", jj, "has shape", folded_arr.shape
-
 RC = chp.RFI_Clean(data_arr, time)
+RC.ln = args.ln
 RC.dec = dec
 RC.RA = RA
 RC.RA_src = np.deg2rad(RA_src)
-print RC.data.shape, "ZERO"
-RC.corrs = corrs#[: 2 * ncorr / 3] # Need only to fold the CHIME/26m correlations. 
-print RC.data.shape, "TWO"
+RC.corrs = corrs
 RC.frequency_clean()
 RC.fringestop() 
 
+
 for freq in range(n_freq_bins):
-    print "Folding freq %i" % freq 
+    if jj==0:
+        print "Folding freq %i" % freq 
     for tt in range(n_time_bins):
         folded_arr[freq, :, tt, :] = RC.fold_pulsar(p1, DM, nbins=n_phase_bins, \
                     start_chan=freq_int*freq, end_chan=freq_int*(freq+1), start_samp=time_int*tt, end_samp=time_int*(tt+1), f_ref=400.0)
