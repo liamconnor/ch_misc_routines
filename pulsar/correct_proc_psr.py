@@ -1,8 +1,8 @@
+import os
 
 import numpy as np
 import h5py
 import argparse
-import os
 
 import misc_data_io as misc
 import ch_util.andata
@@ -15,9 +15,7 @@ print comm.rank, comm.size
 
 chand = ch_util.andata.AnData()
 
-autos = [3,23]
-nfreq = []
-ncorr = []
+autos = [7, 19]
 
 ant = [0,1,2,4,5,6]
 pairs = [(0,13), (1,14), (2,15), (4,9), (5,10), (6,11)] # These are the antenna pairs for layout 29, I think.  
@@ -27,11 +25,12 @@ parser.add_argument("data_file", help="Data file to analyze")
 parser.add_argument("-outtag", help="", default="vis_full")
 parser.add_argument("-nfreq", help="number of frequencies", default=1024, type=int)
 parser.add_argument("-svd", help="Remove largest phase eigenvalue with SVD", type=int, default=1)
+parser.add_argument("-ln", help="Layout number", default='29')
 args = parser.parse_args()
 
 nfreq = args.nfreq
 
-rank = comm.rank
+rank = comm.rank 
 
 psr_arr = []
 
@@ -50,6 +49,12 @@ for nu in range(nfreq):
     
 print "Done concatenating frequency files"
 
+t = f['times']
+ntimes = f['folded_arr'][:].shape[1]
+print ntimes
+time = np.linspace(t[0], t[-1], ntimes)
+time = time[:]
+
 psr_arrx = np.concatenate(psr_arrx)
 psr_arr26 = np.concatenate(psr_arr26)
 
@@ -58,28 +63,43 @@ psr_arr26[np.isnan(psr_arr26)] = 0.0
 
 ntimes = psr_arrx.shape[-2]
 
-bin_tup = chp.find_ongate(psr_arr26, ref_prod=[0,1])
+bin_tup = chp.find_ongate(abs(psr_arr26), ref_prod=[0,1])
 arr_corr = chp.correct_phase_bins(psr_arrx, bin_tup)
 arr_corr26 = chp.correct_phase_bins(psr_arr26, bin_tup)
 
 on_gate = arr_corr.shape[-1] / 2.
 
-#psr_vis = 0.80 * arr_corr[..., on_gate] + 0.10 * (arr_corr[..., on_gate+1] + arr_corr[..., on_gate-1]) -\
-#                0.5 * (arr_corr[..., on_gate+5:].mean(axis=-1) + arr_corr[..., :on_gate - 5].mean(axis=-1))
 
-#psr_vis = 0.80 * arr_corr[..., on_gate] + 0.10 * (arr_corr[..., on_gate+1] + arr_corr[..., on_gate-1]) \
-#    - 0.5 * (arr_corr[..., on_gate-5] + arr_corr[..., on_gate+5])
+if on_gate<10:
+    psr_vis = arr_corr[..., on_gate] - 0.5 * ( arr_corr[..., on_gate+2] + arr_corr[..., on_gate-2] ) # For only 14 gates
+elif on_gate>9:
+    psr_vis = 0.80 * arr_corr[..., on_gate] + 0.10 * (arr_corr[..., on_gate+1] + arr_corr[..., on_gate-1]) \
+        - 0.5 * (arr_corr[..., on_gate-3] + arr_corr[..., on_gate+3])
+    
+x=7
+y=3
 
-#psr_vis = arr_corr.mean(-1)
+nfeeds=16
+feeds = np.arange(nfeeds)
+corrs = [misc.feed_map(i, x, nfeeds) for i in feeds] + [misc.feed_map(i, y, nfeeds) for i in feeds]
+ 
+RC = chp.PulsarPipeline(psr_vis, time)
+RC.RA_src, RC.dec = 53.51337, 54.6248916
+RC.ln = args.ln
+RC.RA = eph.transit_RA(time)
+RC.corrs = corrs[rank]
+RC.fringestop()
 
+psr_vis = RC.data[:,0]
+
+psr_vis = misc.correct_delay(psr_vis, nfreq=nfreq)
 
 if args.svd==1:
-    psr_vis_cal = misc.svd_model(psr_vis[:, 0], phase_only=True)
+    psr_vis_cal = misc.svd_model(psr_vis, phase_only=True)
     print "Performing SVD on dynamic spectrum, rank %d" % rank
 else:
     print "Skipping SVD"
-    #psr_vis_cal = psr_vis
-    psr_vis_cal = arr_corr
+    psr_vis_cal = psr_vis[:]
 
 outfile = args.data_file + np.str(rank) + args.outtag + ".hdf5"
 print "Writing to", outfile
@@ -89,6 +109,8 @@ os.system('rm -f ' + outfile)
 
 g = h5py.File(outfile, 'w')
 g.create_dataset("psr_vis", data=psr_vis_cal)
+g.create_dataset("arr", data=psr_arrx)
+g.create_dataset("time", data=time)
 g.close()
 
 
@@ -134,7 +156,6 @@ if rank==0:
     g.create_dataset('x_corrmat', data=vx)
     g.close()
 """
-
 
 
 
