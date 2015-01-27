@@ -163,9 +163,6 @@ class PulsarPipeline:
         return fold_arr, icount[:, np.newaxis], fold_arr_ns, icount_ns[:, np.newaxis]
 
     
-
-
-    
     def fold_pulsar(self, p0, dm, nbins=32, **kwargs):
         """
         Folds pulsar into nbins after dedispersing it. 
@@ -436,3 +433,15 @@ def derotate_far(data, RM):
         phase = phase[:, np.newaxis]
 
     return data * phase[:, np.newaxis]
+
+def inj_fake_noise(data, times, cad=5):
+    t_ns, p0 = np.linspace(times[0], times[-1], 
+              ((times[-1] - times[0]) / cad).astype(int), retstep=True)
+    tt = times.repeat(len(t_ns)).reshape(-1, len(t_ns))
+
+    ind_ns = abs(tt - t_ns).argmin(axis=0)
+    
+    for corr in range(data.shape[1]):
+        data[:, corr, ind_ns] += 2 * np.median(data[:, corr])
+
+    return data, p0
