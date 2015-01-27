@@ -57,8 +57,9 @@ inj_noise = True
 
 sources = np.loadtxt('/home/k/krs/connor/code/ch_misc_routines/pulsar/sources2.txt', dtype=str)[1:]
 
-src_ind = sources[sources[:,0]==args.pulsar][0]
-RA_src, dec, DM, p1 = np.float(src_ind[1]), np.float(src_ind[2]), np.float(src_ind[3]), np.float(src_ind[4])
+src_ind = sources[sources[:, 0]==args.pulsar][0]
+RA_src, dec, DM, p1 = np.float(src_ind[1]), 
+    np.float(src_ind[2]), np.float(src_ind[3]), np.float(src_ind[4])
 
 nnodes = args.nnodes
 file_chunk = args.chunksize
