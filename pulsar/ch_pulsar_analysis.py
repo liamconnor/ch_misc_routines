@@ -1,5 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
 import os
 import h5py
 import misc_data_io as misc
@@ -31,8 +30,11 @@ class PulsarPipeline:
         self.ntimes = self.data.shape[-1]
         self.ncorr = self.data.shape[1]
         self.corrs = range(self.ncorr)
-        self.ln = 29
+        self.xcorrs = None
+        self.ln = '29'
+        self.powlaw = 0
         print "Data array has shape:", self.data.shape
+        
     
     def get_uv(self):
         feed_loc = np.loadtxt('/home/k/krs/connor/code/ch_misc_routines/pulsar/feed_loc_layout' + self.ln + '.txt')
@@ -44,7 +46,8 @@ class PulsarPipeline:
 
     def dm_delays(self, dm, f_ref):
         """
-        Provides dispersion delays as a function of frequency. 
+        Provides dispersion delays as a function of frequency. Note
+        frequencies are in MHz.
         
         Parameters
         ----------
@@ -58,6 +61,110 @@ class PulsarPipeline:
         Vector of delays in seconds as a function of frequency
         """
         return 4.148808e3 * dm * (self.freq**(-2) - f_ref**(-2))
+
+
+    def fold(self, data, times, dm, p0, ntrebin=100, ngate=32):
+        ntimes = data.shape[-1] // ntrebin
+        ncorr = data.shape[1]
+
+        fold_arr = np.zeros([self.nfreq, ncorr, ntimes, ngate], np.complex128)
+        icount = np.zeros([self.nfreq, ntimes, ngate], np.int32)
+
+        dshape = data.shape[:-1] + (ntimes, ntrebin)
+
+        data_rb = data[..., :(ntimes*ntrebin)].reshape(dshape)
+        
+        for fi in range(self.nfreq):
+            if (fi % 128) == 0:
+                print "Folded freq", fi
+            tau = self.dm_delays(dm, 400)
+            times_del = times - tau[fi]
+
+            bins = (((times_del / p0) % 1) * ngate).astype(np.int)
+            bins = bins[:(ntrebin*ntimes)].reshape(ntimes, ntrebin)
+
+            for ti in range(ntimes):
+
+                icount[fi, ti] = np.bincount(bins[ti], data_rb[fi, 0, ti] != 0., ngate)
+
+                for corr in range(ncorr):
+
+                    data_fold_r = np.bincount(bins[ti], 
+                                              weights=data_rb[fi, corr, ti].real, minlength=ngate)
+                    data_fold_i = np.bincount(bins[ti], 
+                                              weights=data_rb[fi, corr, ti].imag, minlength=ngate)
+
+                    fold_arr[fi, corr, ti, :] = data_fold_r + 1j * data_fold_i
+
+        return fold_arr, icount[:, np.newaxis]
+
+    def fold_two_periods(self, data, times, dm, p0_psr, p0_ns, 
+                         ntrebin=100, ntrebin_ns=100, ngate=32, ngate_ns=32):
+        """ Fold on both the noise source and the pulsar.
+        """
+        ntimes = data.shape[-1] // ntrebin
+        ntimes_ns = data.shape[-1] // ntrebin_ns
+
+        ncorr = data.shape[1]
+
+        fold_arr = np.zeros([self.nfreq, ncorr, ntimes, ngate], np.complex128)
+        icount = np.zeros([self.nfreq, ntimes, ngate], np.int32)
+
+        fold_arr_ns = np.zeros([self.nfreq, ncorr, ntimes_ns, ngate_ns], np.complex128)
+        icount_ns = np.zeros([self.nfreq, ntimes_ns, ngate_ns], np.int32)        
+
+        dshape = data.shape[:-1] + (ntimes, ntrebin)
+        dshape_ns = data.shape[:-1] + (ntimes_ns, ntrebin_ns)
+
+        data_rb = data[..., :(ntimes*ntrebin)].reshape(dshape)
+        data_rb_ns = data[..., :(ntimes_ns*ntrebin_ns)].reshape(dshape_ns)
+
+        for fi in range(self.nfreq):
+
+            if (fi % 128) == 0:
+                print "Folded freq", fi
+
+            tau = self.dm_delays(dm, 400)
+            times_del = times - tau[fi]
+
+            bins = (((times_del / p0_psr) % 1) * ngate).astype(np.int)
+            bins = bins[:(ntrebin*ntimes)].reshape(ntimes, ntrebin)
+
+            bins_ns = (((times / p0_ns) % 1) * ngate_ns).astype(np.int)
+            bins_ns = bins_ns[:(ntrebin_ns*ntimes_ns)].reshape(ntimes_ns, ntrebin_ns)
+
+            for ti in range(ntimes):
+
+                icount[fi, ti] = np.bincount(bins[ti], data_rb[fi, 0, ti] != 0., ngate)
+
+                for corr in range(ncorr):
+
+                    data_fold_r = np.bincount(bins[ti], 
+                                              weights=data_rb[fi, corr, ti].real, minlength=ngate)
+                    data_fold_i = np.bincount(bins[ti], 
+                                              weights=data_rb[fi, corr, ti].imag, minlength=ngate)
+
+                    fold_arr[fi, corr, ti, :] = data_fold_r + 1j * data_fold_i
+
+            for tj in range(ntimes_ns):
+
+                icount_ns[fi, tj] = np.bincount(bins_ns[tj], data_rb_ns[fi, 0, tj] != 0., ngate_ns)
+
+                for corr in range(ncorr):
+
+                    data_fold_r = np.bincount(bins_ns[tj], 
+                                              weights=data_rb_ns[fi, corr, tj].real, minlength=ngate_ns)
+                    data_fold_i = np.bincount(bins_ns[tj], 
+                                              weights=data_rb_ns[fi, corr, tj].imag, minlength=ngate_ns)
+
+                    fold_arr_ns[fi, corr, tj, :] = data_fold_r + 1j * data_fold_i
+
+
+        return fold_arr, icount[:, np.newaxis], fold_arr_ns, icount_ns[:, np.newaxis]
+
+    
+
+
     
     def fold_pulsar(self, p0, dm, nbins=32, **kwargs):
         """
@@ -92,9 +199,11 @@ class PulsarPipeline:
    
         data = self.data[start_chan:end_chan, :, start_samp:end_samp].copy()
 
-#        for corr in range(self.ncorr):
-            #data[:, corr, :] /= running_mean(data[:, corr, :])
-#            data[:, corr, :] /= (abs(data[:,corr]).mean(axis=-1)[:, np.newaxis] / freq[:, np.newaxis]**(-0.8))
+        if self.powlaw==1:
+            print "moving powlaw div"
+            for corr in range(self.ncorr):
+#            data[:, corr, :] /= running_mean(data[:, corr, :])
+                data[:, corr, :] /= (abs(data[:,corr]).mean(axis=-1)[:, np.newaxis] / freq[:, np.newaxis]**(-0.8))
 
         delays = self.dm_delays(dm, f_ref)[start_chan:end_chan, np.newaxis, np.newaxis] * np.ones([1, data.shape[1], data.shape[-1]])
         dedispersed_times = times[np.newaxis, np.newaxis, :] * np.ones([data.shape[0], data.shape[1], 1]) - delays
@@ -160,16 +269,21 @@ class PulsarPipeline:
         return folded_arr
                     
 
-    def fringestop(self):
+    def fringestop(self, reverse=False):
         data = self.data.copy()
-        data = data - np.mean(data, axis=-1)[:, :, np.newaxis]
-        
-        ha = np.deg2rad(self.RA[np.newaxis, np.newaxis, :]) - self.RA_src
+
+        ha = np.deg2rad(self.RA[np.newaxis, np.newaxis, :] - self.RA_src)
         dec = np.deg2rad(self.dec)
+
         u, v = self.get_uv()
-        phase = self.fringestop_phase(ha, np.deg2rad(chime_lat), dec, u, v)
-        self.data = data * phase
-        return data, phase
+        phase = self.fringestop_phase(ha, np.deg2rad(chime_lat), dec, 0.93*u, 0.93*v)
+        
+        if reverse==True:
+            self.data = data * np.conj(phase)
+            print "Reverse fringestopping"
+        else:
+            self.data = data * phase
+
 
     def fringestop_phase(self, ha, lat, dec, u, v):
         """Return the phase required to fringestop. All angle inputs are radians. 
@@ -197,7 +311,7 @@ class PulsarPipeline:
         uhdotn = np.cos(dec) * np.sin(-ha)
         vhdotn = np.cos(lat) * np.sin(dec) - np.sin(lat) * np.cos(dec) * np.cos(-ha)
         phase = uhdotn * u + vhdotn * v
-
+        
         return np.exp(2.0J * np.pi * phase)
     
 
@@ -235,7 +349,6 @@ class RFI_Clean(PulsarPipeline):
             self.data[np.where(mask)[0], :] = 0.0 
 
         self.data[self.always_cut, :] = 0.0
-        print "Finished cutting spectral RFI"
         
     def time_clean(self, threshold=5):
         """
@@ -323,7 +436,7 @@ def correct_phase_bins(arr, bin_tup):
     arr:
          Pulsar data array realigned such that the pulses are in the central phase bin
     """
-    data = arr#.copy()
+    data = arr 
     ntimes = data.shape[2]
     nbins = data.shape[-1]
     bin_x, bin_y, bin_diff = bin_tup
@@ -335,7 +448,7 @@ def correct_phase_bins(arr, bin_tup):
             on_bin = bin_y[tt] #Replace this with something unbiased!
         else:
             on_bin = bin_x[tt-1]
-                
+            
         data[:, :, tt] = np.roll(data[:,:,tt], np.int(nbins/2.0) - on_bin, axis=-1)
 
     return data
