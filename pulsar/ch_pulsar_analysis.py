@@ -219,6 +219,25 @@ class PulsarPipeline:
                 profile[corr, i] += vals[vals!=0.0].mean()
         
         return profile
+
+    def noisefunc(self, data):
+        ngate = data.shape[-1]
+
+        on = [19, 20, 21]
+        off = np.delete(range(ngate), on)
+        
+        data[np.isnan(data)] = 0.0
+        profile_avg = data.mean(axis=1)
+        on_avg = profile_avg[..., on] - profile_avg[..., np.newaxis, off].mean(-1)
+        
+        data_no_ns = data.copy()
+
+        #Now recover the data without any noise injection
+        data_no_ns[..., on] -= on_avg[:, np.newaxis]
+
+        data_on = data[..., on] - np.median(data[..., np.newaxis, off], axis=-1)
+
+        return data_no_ns, data_on
                         
 
     def fringestop(self, reverse=False):
