@@ -219,55 +219,7 @@ class PulsarPipeline:
                 profile[corr, i] += vals[vals!=0.0].mean()
         
         return profile
-    
-    def fold2(self, p0, dm, nbins=32, time_rebin=1000, freq_rebin=1, **kwargs):
-
-        if kwargs.has_key('start_chan'): start_chan = kwargs['start_chan']
-        else: start_chan = 0
-        if kwargs.has_key('end_chan'): end_chan = kwargs['end_chan']
-        else: end_chan = self.nfreq
-        if kwargs.has_key('start_samp'): start_samp = kwargs['start_samp']
-        else: start_samp = 0
-        if kwargs.has_key('end_samp'): end_samp = kwargs['end_samp']
-        else: end_samp = self.ntimes   
-
-        if kwargs.has_key('f_ref'): f_ref = kwargs['f_ref']
-        else: f_ref = freq[0]
-
-        nfreq = end_chan - start_chan
-        nt = self.ntimes / time_rebin
-        nf = nfreq / freq_rebin
-
-        data = self.data.copy()
-        
-        #delays = self.dm_delays(dm, f_ref)[start_chan:end_chan, np.newaxis, np.newaxis] * np.ones([1, data.shape[1], data.shape[-1]])
-        delays = self.dm_delays(dm, f_ref)[start_chan:end_chan]
-
-        tstamps_all = self.time_stamps[:(nt * time_rebin)].reshape(nt, time_rebin)
-        dset = data[:,:,:(nt * time_rebin)].reshape(self.nfreq, self.ncorr, nt, -1)
-        
-        arr_shape = dset.shape[:-1] + (nbins,)
-        folded_arr = np.zeros(arr_shape, np.complex128)
-
-        for ti in range(nt):
-
-            tstamps = tstamps_all[ti]
-
-            for fi in range(nf):
-
-                tstamp_f = tstamps - delays[fi]
-                bin = (((tstamp_f / p0) % 1.0) * nbins).astype(np.int)
-
-                for pi in range(self.ncorr):
-
-                    data_fold_r = np.bincount(bin, weights=dset[fi, pi, ti].real, minlength=nbins)
-                    data_fold_i = np.bincount(bin, weights=dset[fi, pi, ti].imag, minlength=nbins)
-                    gate_data = (data_fold_r + 1.0J * data_fold_i)
-
-                    folded_arr[fi, pi, ti] = gate_data
-
-        return folded_arr
-                    
+                        
 
     def fringestop(self, reverse=False):
         data = self.data.copy()
