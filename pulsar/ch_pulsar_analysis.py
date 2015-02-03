@@ -63,25 +63,47 @@ class PulsarPipeline:
         return 4.148808e3 * dm * (self.freq**(-2) - f_ref**(-2))
 
 
-    def fold(self, data, times, dm, p0, ntrebin=100, ngate=32):
-        ntimes = data.shape[-1] // ntrebin
-        ncorr = data.shape[1]
+    def fold(self, dm, p0, ntrebin=100, ngate=32):
+        """Folds pulsar into nbins after dedispersing it. 
+        
+        Parameters
+        ----------
+        p0 : float
+                Pulsar period in seconds. 
+        dm : float
+                Dispersion measure in pc/cm**3
+        ntrebin : np.int
+                Number of time stamps that go into folded period
+        ngate : np.int
+                Number of phase bins to fold on
+                
+        Returns
+        -------
+        fold_arr : array_like 
+                Folded complex array shaped (nfreq, ncorr, ntimes/ntrebin, ngate)
+        icount : array_like
+                Number of elements in given phase bin (nfreq, ntimes/ntrebin, ngate)
+
+        """        
+
+        ntimes = self.data.shape[-1] // ntrebin
+        ncorr = self.data.shape[1]
 
         fold_arr = np.zeros([self.nfreq, ncorr, ntimes, ngate], np.complex128)
         icount = np.zeros([self.nfreq, ntimes, ngate], np.int32)
 
-        dshape = data.shape[:-1] + (ntimes, ntrebin)
+        dshape = self.data.shape[:-1] + (ntimes, ntrebin)
 
-        data_rb = data[..., :(ntimes*ntrebin)].reshape(dshape)
+        data_rb = self.data[..., :(ntimes*ntrebin)].reshape(dshape)
         
+        bins_all = self.phase_bins(p0, dm, ngate)
+
         for fi in range(self.nfreq):
             if (fi % 128) == 0:
                 print "Folded freq", fi
             tau = self.dm_delays(dm, 400)
-            times_del = times - tau[fi]
 
-            bins = (((times_del / p0) % 1) * ngate).astype(np.int)
-            bins = bins[:(ntrebin*ntimes)].reshape(ntimes, ntrebin)
+            bins = bins_all[fi, :(ntrebin*ntimes)].reshape(ntimes, ntrebin)
 
             for ti in range(ntimes):
 
@@ -97,6 +119,21 @@ class PulsarPipeline:
                     fold_arr[fi, corr, ti, :] = data_fold_r + 1j * data_fold_i
 
         return fold_arr, icount[:, np.newaxis]
+
+    def phase_bins(self, p0, dm, ngate):
+
+        bins = np.zeros([self.nfreq, self.ntimes], np.int)
+        
+        times = self.time_stamps
+
+        for fi in range(self.nfreq):
+
+            tau = self.dm_delays(dm, 400)
+            times_del = times - tau[fi]
+
+            bins[fi] = (((times_del / p0) % 1) * ngate).astype(np.int)
+
+        return bins
 
     def fold_two_periods(self, data, times, dm, p0_psr, p0_ns, 
                          ntrebin=100, ntrebin_ns=100, ngate=32, ngate_ns=32):
@@ -287,7 +324,9 @@ class RFI_Clean(PulsarPipeline):
 
     always_cut = range(111,138) + range(889,893) + range(856,860) + \
         range(873,877) + range(583,600) + range(552,569) + range(630,645) +\
-        range(675,692) + range(753, 768) + range(783, 798) + [267,268,273]
+        range(675,692) + range(753, 768) + range(783, 798) + [267,268,273] + \
+        [882, 808, 809, 810, 846, 847, 855, 876, 879, 878, 864, 896, 897, 798, 1017, 978, 977]
+
     
     def frequency_clean(self, threshold=1e6, broadband_only=True):
         """
@@ -442,6 +481,27 @@ def inj_fake_noise(data, times, cad=5):
     ind_ns = abs(tt - t_ns).argmin(axis=0)
     
     for corr in range(data.shape[1]):
-        data[:, corr, ind_ns] += 2 * np.median(data[:, corr])
+        for k in range(6):
+            data[:, corr, ind_ns[:-1]+k] += 0.02 * np.median(data[:, corr], axis=-1)[:, np.newaxis]
 
     return data, p0
+
+def opt_subtraction(data):
+    """ Performs optimal on/off subtraction on folded data
+    """
+    data_sub = data - np.mean(data, axis=-1, keepdims=True)
+    # Take subtracted time average
+    data_sub_avg = np.mean(data_sub, axis=1, keepdims=True)
+
+    return (data_sub * data_sub_avg).sum(axis=-1)
+
+def common_phasebins(PulsarPipeline, p1, p2, 
+                     ngate1, ngate2, on1, on2):
+
+    t1 = PulsarPipeline.phase_bins(p1, 0.0, ngate1)[0]
+    t2 = PulsarPipeline.phase_bins(p2, 0.0, ngate2)[0]
+
+
+    return np.where(t1==on1)[0], np.where(t2==on2)[0]
+    
+    
