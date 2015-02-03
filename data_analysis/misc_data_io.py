@@ -219,16 +219,44 @@ def svd_model(arr, phase_only=True):
     ======
     Original data array multiplied by the largest SVD mode
     """
+
     u,s,w = np.linalg.svd(arr)
     s[1:] = 0.0
-    S = np.zeros([len(s), w.shape[0]], np.complex128)
+    S = np.zeros([len(u), len(w)], np.complex128)
     S[:len(s), :len(s)] = np.diag(s)
-        
+    
+    print u.shape, S.shape, w.shape
+
     model = np.dot(np.dot(u, S), w)
 
     if phase_only==True:
         return arr * np.exp(-1j * np.angle(model))
     else:
-        return arr * np.conj(model)        
+        return arr / (model)        
 
 
+def correct_delay(data, nfreq=1024):
+    lag_max = np.argmax(abs(np.fft.fftshift(np.fft.fft(data, axis=0), axes=0)).mean(-1))
+    os_pix = lag_max - data.shape[0]/2 
+    phase = np.exp(-2j*np.pi * os_pix * np.arange(nfreq)/nfreq)
+    
+    return data * phase[:, np.newaxis]
+
+def pulse_weight(data, weights):
+    """ Multiply each pulse by its flux, normalize by sum
+    
+    Parameters
+    ----------
+    data : array_like
+         (nfreq x ntimes) data to be weighted
+    weights : array_like
+         ntimes-length vector with pulse weights
+
+    Returns
+    -------
+    Weighted data
+    """
+    return data * weights[np.newaxis] / weights.sum()
+
+    
+    
