@@ -486,14 +486,21 @@ def inj_fake_noise(data, times, cad=5):
 
     return data, p0
 
-def opt_subtraction(data):
+def opt_subtraction(data, phase_axis=-1, time_axis=-2, absval=True):
     """ Performs optimal on/off subtraction on folded data
     """
-    data_sub = data - np.mean(data, axis=-1, keepdims=True)
-    # Take subtracted time average
-    data_sub_avg = np.mean(data_sub, axis=1, keepdims=True)
+    if absval:
+        data_ = abs(data.copy())
+    else:
+        data_ = data
 
-    return (data_sub * data_sub_avg).sum(axis=-1)
+    data_sub = data_ - np.mean(data_, axis=phase_axis, keepdims=True)
+    # Take subtracted time average
+#    data_sub_avg = np.mean(data_sub, axis=time_axis, keepdims=True).mean(axis=1)[:, np.newaxis]
+    data_sub_avg = data_sub.mean(0).mean(0)[np.newaxis, np.newaxis]
+
+
+    return (data * data_sub_avg).sum(axis=phase_axis)
 
 def common_phasebins(PulsarPipeline, p1, p2, 
                      ngate1, ngate2, on1, on2):

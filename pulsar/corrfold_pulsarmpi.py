@@ -119,10 +119,7 @@ RC = chp.RFI_Clean(data_arr, time)
 #RC.corrs = corrs
 #RC.frequency_clean()
 
-RC.nfreq = 512
-folded_arr1, icount1 = RC.foldit(data_arr[:512], time, DM, p1, ngate=ngate, ntrebin=time_int)
-folded_arr2, icount2 = RC.foldit(data_arr[512:], time, DM, p1, ngate=ngate, ntrebin=time_int)
-RC.nfreq = 1024
+folded_arr, icount = RC.fold(data_arr, time, DM, p1, ngate=ngate, ntrebin=time_int)
 
 folded_arr = np.concatenate((folded_arr1, folded_arr2), axis=0)
 print "Done folding"
