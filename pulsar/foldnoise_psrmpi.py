@@ -22,20 +22,9 @@ def inj_fake_noise(data, times, cad=5):
     ind_ns = abs(tt - t_ns).argmin(axis=0)
     
     for corr in range(data.shape[1]):
-        data[:, corr, ind_ns] += 2 * np.median(data[:, corr])
+        data[:, corr, ind_ns] += np.median(data[:, corr], axis=-1)[:, np.newaxis]
 
     return data, p0
-
-def inj_fake_noise2(data, cad=50, dur=5):
-    on_ind = np.zeros([2048])
-    
-    for i in range(dur):
-        print i
-        on_ind[i::50] = 1
-
-    data[:, on_ind==1] += 5 * np.std(data)
-
-    return data
 
 
 parser = argparse.ArgumentParser(description="This script RFI-cleans, fringestops, and folds the pulsar data.")
@@ -58,7 +47,7 @@ inj_noise = True
 sources = np.loadtxt('/home/k/krs/connor/code/ch_misc_routines/pulsar/sources2.txt', dtype=str)[1:]
 
 src_ind = sources[sources[:, 0]==args.pulsar][0]
-RA_src, dec, DM, p1 = np.float(src_ind[1]), 
+RA_src, dec, DM, p1 = np.float(src_ind[1]), \
     np.float(src_ind[2]), np.float(src_ind[3]), np.float(src_ind[4])
 
 nnodes = args.nnodes
@@ -127,7 +116,7 @@ ncorr = data_arr.shape[1]
 outdir = '/scratch/k/krs/connor/chime/calibration/' 
 
 if args.use_fpga==1:
-    dt = 2048. / 800e6 #* 4.0 # THIS IS ONLY FOR AUGUST 22ND WHOSE TIMESTAMPS ARE BAD
+    dt = 2048. / 800e6 * 4.0 # THIS IS ONLY FOR AUGUST 22ND WHOSE TIMESTAMPS ARE BAD
     time = (fpga_count) * dt 
     if jj==0:
         print "We're going with the fpga counts"

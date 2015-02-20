@@ -12,6 +12,30 @@ from mpi4py import MPI
 comm = MPI.COMM_WORLD
 print comm.rank, comm.size
 
+def inj_fake_noise(data, times, cad=5):
+    t_ns, p0 = np.linspace(times[0], times[-1], 
+              ((times[-1] - times[0]) / cad).astype(int), retstep=True)
+    tt = times.repeat(len(t_ns)).reshape(-1, len(t_ns))
+
+    ind_ns = abs(tt - t_ns).argmin(axis=0)
+    
+    for corr in range(data.shape[1]):
+        data[:, corr, ind_ns] += 2 * np.median(data[:, corr])
+
+    return data, p0
+
+def inj_fake_noise2(data, cad=50, dur=5):
+    on_ind = np.zeros([2048])
+    
+    for i in range(dur):
+        print i
+        on_ind[i::50] = 1
+
+    data[:, on_ind==1] += 5 * np.std(data)
+
+    return data
+
+
 parser = argparse.ArgumentParser(description="This script RFI-cleans, fringestops, and folds the pulsar data.")
 parser.add_argument("data_dir", help="Directory with hdf5 data files")
 parser.add_argument("pulsar", help="Name of pulsar e.g. B0329+54")
@@ -26,6 +50,8 @@ parser.add_argument("-chunksize", help='Number of files to read per node', defau
 parser.add_argument("-div_autos", help='Divide by geometric mean of autos.', default=1, type=int)
 parser.add_argument("-use_chime_autos", help='use only ch-ch autocorrelations', default=0, type=int)
 args = parser.parse_args()
+
+inj_noise = True
 
 sources = np.loadtxt('/home/k/krs/connor/code/ch_misc_routines/pulsar/sources2.txt', dtype=str)[1:]
 
@@ -68,22 +94,7 @@ ncorr = len(corrs)
 
 if args.use_chime_autos:
     feeds = np.arange(nfeeds)
-    corrs_auto = [misc.feed_map(i, i, nfeeds) for i in feeds]
     corrs = corrs_auto
-    # Do a run with only xy autos
-    xcorr = [4, 5, 6, 7, 8, 9, 10, 11]
-    ycorr = [0, 1, 2, 3, 12, 13, 14, 15]
-
-    corrs = [misc.feed_map(xcorr[i], ycorr[i], nfeeds) for i in range(len(xcorr))]
-    corrs_auto = [misc.feed_map(i, i, nfeeds) for i in xcorr] + \
-                 [misc.feed_map(i, i, nfeeds) for i in ycorr]
-
-    corrs = xx + yy
-    corrs_auto = xauto + yauto
-
-    corrs_auto = [misc.feed_map(i, i, 16) for i in range(16)]
-    corrs = range(1, 16) + corrs_auto
-
     ncorr = len(corrs)
     
 if jj==0:
@@ -119,9 +130,13 @@ RC = chp.RFI_Clean(data_arr, time)
 #RC.corrs = corrs
 #RC.frequency_clean()
 
-folded_arr, icount = RC.fold(data_arr, time, DM, p1, ngate=ngate, ntrebin=time_int)
+if inj_noise:
+    data_arr, p_ns = inj_fake_noise(data_arr, time, cad=1.0000)
+    
 
-folded_arr = np.concatenate((folded_arr1, folded_arr2), axis=0)
+folded_arr, icount = RC.fold(data_arr, time, 0.0, p_ns, ngate=ngate, ntrebin=time_int)
+
+
 print "Done folding"
 
 """

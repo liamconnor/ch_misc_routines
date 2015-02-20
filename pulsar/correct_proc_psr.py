@@ -65,7 +65,6 @@ for nu in range(nfreq):
     psr_auto_j.append(data_auto_j)
     psr_arr26.append(data26m[np.newaxis])
     
-
 t = f['times']
 ntimes = f['folded_arr'][:].shape[1]
 
