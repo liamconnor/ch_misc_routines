@@ -211,14 +211,15 @@ def svd_model(arr, phase_only=True):
     Take time/freq visibilities SVD, zero out all but the largest mode, multiply original data by complex conjugate
     
     Parameters
-    ==========
-    arr: np.array
-       Time/freq visiblity matrix
+    ----------
+    arr : array_like
+       Time/freq visiblity matrix 
 
-    Return
-    ======
-    Original data array multiplied by the largest SVD mode
+    Returns
+    -------
+    Original data array multiplied by the largest SVD mode conjugate
     """
+
     u,s,w = np.linalg.svd(arr)
     s[1:] = 0.0
     S = np.zeros([len(s), w.shape[0]], np.complex128)
