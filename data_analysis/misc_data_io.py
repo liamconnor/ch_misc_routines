@@ -259,4 +259,41 @@ def pulse_weight(data, weights):
     return data * weights[np.newaxis] / weights.sum()
 
     
-    
+def reshape_zeros(arr, frb=4, trb=2):
+    """ Bin down in time and frequency, accounting for the 
+    zerod channels 
+
+    Parameters
+    ----------
+    arr : array_like
+        (nfreq, -1, ntimes) array
+    frb : np.int
+        frequency rebin
+    trb : np.int
+        time rebin
+
+    Return 
+    ------
+    Rebinned array
+    """
+
+    nfreq = arr.shape[0] / frb
+    ntimes = arr.shape[-1] / trb
+
+    Arr = arr.reshape(nfreq, frb, -1, ntimes, trb).sum(1).sum(-1)
+
+    freq_w = (arr.mean(-1) != 0.0).reshape(nfreq, frb, -1).sum(1)
+    time_w = (arr.mean(0) != 0.0).reshape(-1, ntimes, trb).sum(-1)
+
+    return Arr / freq_w[:, :, np.newaxis] / time_w[np.newaxis]
+
+
+def gen_delay_tab(delays):
+    """ Takes delays for n-feeds and returns relative delays 
+    for n*(n+1)/2 correlations
+    """
+
+    n = len(delays)
+    del_arr = delays.repeat(n).reshape(-1, n)
+
+    return (del_arr - del_arr.T)[np.triu_indices(n)]
