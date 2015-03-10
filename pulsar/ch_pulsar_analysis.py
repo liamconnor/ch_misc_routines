@@ -37,10 +37,15 @@ class PulsarPipeline:
         
     
     def get_uv(self):
-        feed_loc = np.loadtxt('/home/k/krs/connor/code/ch_misc_routines/pulsar/feed_loc_layout' + self.ln + '.txt')
+        fname = '/home/k/krs/connor/code/ch_misc_routines/pulsar/feed_loc_layout' + self.ln + '.txt'
+        feed_loc = np.loadtxt(fname)
         d_EW, d_NS = misc.calc_baseline(feed_loc)[:2]
-        u = d_EW[np.newaxis, self.corrs, np.newaxis] * self.freq[:, np.newaxis, np.newaxis] * 1e6 / (3e8)
-        v = d_NS[np.newaxis, self.corrs, np.newaxis] * self.freq[:, np.newaxis, np.newaxis] * 1e6 / (3e8)
+
+        u = d_EW[np.newaxis, self.corrs, np.newaxis] \
+            * self.freq[:, np.newaxis, np.newaxis] * 1e6 / (3e8)
+
+        v = d_NS[np.newaxis, self.corrs, np.newaxis] \
+            * self.freq[:, np.newaxis, np.newaxis] * 1e6 / (3e8)
         
         return u, v
 
@@ -488,6 +493,21 @@ def inj_fake_noise(data, times, cad=5):
 
 def opt_subtraction(data, phase_axis=-1, time_axis=-2, absval=True):
     """ Performs optimal on/off subtraction on folded data
+
+    Parameters
+    ----------
+    data : array_like
+         Data array of visibilites, with freqs, times, phase
+    phase_axis : np.int
+         Axis with pulsar phase
+    time_axis : np.int
+         Time axis
+    absval : bool
+         Use time avg abs value as weight
+
+    Returns
+    -------
+    Dynamic spectrum
     """
     if absval:
         data_ = abs(data.copy())
@@ -495,8 +515,7 @@ def opt_subtraction(data, phase_axis=-1, time_axis=-2, absval=True):
         data_ = data
 
     data_sub = data_ - np.mean(data_, axis=phase_axis, keepdims=True)
-    # Take subtracted time average
-#    data_sub_avg = np.mean(data_sub, axis=time_axis, keepdims=True).mean(axis=1)[:, np.newaxis]
+
     data_sub_avg = data_sub.mean(0).mean(0)[np.newaxis, np.newaxis]
 
 
