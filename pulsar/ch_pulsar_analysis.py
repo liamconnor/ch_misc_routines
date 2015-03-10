@@ -37,6 +37,9 @@ class PulsarPipeline:
         
     
     def get_uv(self):
+        """ Takes a layout .txt file and generates each baseline's
+        freq dependent u,v
+        """
         fname = '/home/k/krs/connor/code/ch_misc_routines/pulsar/feed_loc_layout' + self.ln + '.txt'
         feed_loc = np.loadtxt(fname)
         d_EW, d_NS = misc.calc_baseline(feed_loc)[:2]
@@ -205,60 +208,6 @@ class PulsarPipeline:
         return fold_arr, icount[:, np.newaxis], fold_arr_ns, icount_ns[:, np.newaxis]
 
     
-    def fold_pulsar(self, p0, dm, nbins=32, **kwargs):
-        """
-        Folds pulsar into nbins after dedispersing it. 
-        
-        Parameters
-        ----------
-        p0 : float
-                Pulsar period in seconds. 
-        dm : float
-                Dispersion measure in pc/cm**3
-                
-        Returns
-        -------
-        profile: complex vec 
-                Folded pulse profile of length nbins
-
-        """        
-        if kwargs.has_key('start_chan'): start_chan = kwargs['start_chan']
-        else: start_chan = 0
-        if kwargs.has_key('end_chan'): end_chan = kwargs['end_chan']
-        else: end_chan = self.nfreq
-        if kwargs.has_key('start_samp'): start_samp = kwargs['start_samp']
-        else: start_samp = 0
-        if kwargs.has_key('end_samp'): end_samp = kwargs['end_samp']
-        else: end_samp = self.ntimes   
-            
-        times = self.time_stamps[start_samp:end_samp]
-        freq = self.freq[start_chan:end_chan]
-        if kwargs.has_key('f_ref'): f_ref = kwargs['f_ref']
-        else: f_ref = freq[0]
-   
-        data = self.data[start_chan:end_chan, :, start_samp:end_samp].copy()
-
-        if self.powlaw==1:
-            print "moving powlaw div"
-            for corr in range(self.ncorr):
-#            data[:, corr, :] /= running_mean(data[:, corr, :])
-                data[:, corr, :] /= (abs(data[:,corr]).mean(axis=-1)[:, np.newaxis] / freq[:, np.newaxis]**(-0.8))
-
-        delays = self.dm_delays(dm, f_ref)[start_chan:end_chan, np.newaxis, np.newaxis] * np.ones([1, data.shape[1], data.shape[-1]])
-        dedispersed_times = times[np.newaxis, np.newaxis, :] * np.ones([data.shape[0], data.shape[1], 1]) - delays
-
-        bins = (((dedispersed_times / p0) % 1) * nbins).astype(int)
-        profile = np.zeros([data.shape[1], nbins], dtype=np.complex128)
-        
-        for corr in range(self.ncorr):
-            for i in range(nbins):
-                data_corr = data[:, corr, :]
-                bins_corr = bins[:, corr, :]
-                vals = data_corr[bins_corr==i]
-                profile[corr, i] += vals[vals!=0.0].mean()
-        
-        return profile
-
     def noisefunc(self, data):
         ngate = data.shape[-1]
 
