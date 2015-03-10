@@ -7,6 +7,9 @@ import h5py
 
 import ch_pulsar_analysis as chp
 import misc_data_io as misc
+import ch_util
+import ch_util.ephemeris as eph
+
 
 from mpi4py import MPI
 comm = MPI.COMM_WORLD
@@ -23,14 +26,13 @@ parser.add_argument("-use_fpga", help="Use fpga counts instead of timestamps", d
 parser.add_argument("-add_tag", help="Add tag to outfile name to help identify data product", default='')
 parser.add_argument("-nnodes", help='Number of nodes', default=30, type=int)
 parser.add_argument("-chunksize", help='Number of files to read per node', default=10, type=int)
-parser.add_argument("-div_autos", help='Divide by geometric mean of autos.', default=1, type=int)
-parser.add_argument("-use_chime_autos", help='use only ch-ch autocorrelations', default=0, type=int)
 args = parser.parse_args()
 
 sources = np.loadtxt('/home/k/krs/connor/code/ch_misc_routines/pulsar/sources2.txt', dtype=str)[1:]
 
 src_ind = sources[sources[:,0]==args.pulsar][0]
-RA_src, dec, DM, p1 = np.float(src_ind[1]), np.float(src_ind[2]), np.float(src_ind[3]), np.float(src_ind[4])
+RA_src, dec, DM, p1 = np.float(\
+    src_ind[1]), np.float(src_ind[2]), np.float(src_ind[3]), np.float(src_ind[4])
 
 nnodes = args.nnodes
 file_chunk = args.chunksize
@@ -41,7 +43,8 @@ dat_name = args.data_dir[-16:]
 list = glob.glob(args.data_dir + '/*h5*')
 list.sort()
 
-offs=215
+
+offs=0 # This is the file number offset, in case you only want to fold files n through m
 list = list[offs:offs + file_chunk * nnodes]
 
 nchunks = len(list) / file_chunk
@@ -53,49 +56,38 @@ jj = comm.rank
 print "Starting chunk %i of %i" % (jj+1, nchunks)
 print "Getting", file_chunk*jj, ":", file_chunk*(jj+1)
 
-x=7
-y=3
+x = 0
+y = 1
 
 feeds = np.arange(nfeeds)
 nfeeds = len(feeds)
-feeds = [3, 7]
-corrs = [misc.feed_map(i, x, nfeeds) for i in feeds] + [misc.feed_map(i, y, nfeeds) for i in feeds] 
 
-corrs_auto = [misc.feed_map(i, i, nfeeds) for i in feeds]
-corrs = range(nfeeds * (nfeeds+1)/2)
+# The following chooses only correlations between feed i and the 26m feeds
+corrs = [misc.feed_map(i, x, nfeeds) for i in feeds] \
+              + [misc.feed_map(i, y, nfeeds) for i in feeds if i!=x] 
+
+corrs.sort()
+#corrs_auto = [misc.feed_map(i, i, nfeeds) for i in feeds]
+
+# Or you can just select random correlation products
+#corrs = [0, 16, 17]
 
 ncorr = len(corrs)   
-
-if args.use_chime_autos:
-    feeds = np.arange(nfeeds)
-    corrs_auto = [misc.feed_map(i, i, nfeeds) for i in feeds]
-    corrs = corrs_auto
-    # Do a run with only xy autos
-    xcorr = [4, 5, 6, 7, 8, 9, 10, 11]
-    ycorr = [0, 1, 2, 3, 12, 13, 14, 15]
-
-    corrs = [misc.feed_map(xcorr[i], ycorr[i], nfeeds) for i in range(len(xcorr))]
-    corrs_auto = [misc.feed_map(i, i, nfeeds) for i in xcorr] + \
-                 [misc.feed_map(i, i, nfeeds) for i in ycorr]
-
-    corrs = xx + yy
-    corrs_auto = xauto + yauto
-
-    corrs_auto = [misc.feed_map(i, i, 16) for i in range(16)]
-    corrs = range(1, 16) + corrs_auto
-
-    ncorr = len(corrs)
     
-if jj==0:
+if jj == 0:
     print "RA, dec, DM, period:", RA_src, dec, DM, p1
     print "Using correlations", corrs
-    print "with autos:", corrs_auto    
 
-data_arr_full, time_full, RA, fpga_count = misc.get_data(list[file_chunk*jj:file_chunk*(jj+1)])[1:]
-data_arr = data_arr_full[:, corrs]
 
-ntimes = len(time_full)
-time  = time_full
+data_reader_obj = ch_util.andata.Reader(list[file_chunk*jj:file_chunk*(jj+1)])
+data_reader_obj.prod_sel = corrs
+
+data_obj = data_reader_obj.read()
+data_arr = data_obj.vis
+time = data_obj.timestamp
+RA = eph.transit_RA(time)
+
+ntimes = len(time)
 
 time_int = args.time_int
 freq_int = args.freq_int 
@@ -103,7 +95,8 @@ freq_int = args.freq_int
 outdir = '/scratch/k/krs/connor/chime/calibration/' 
 
 if args.use_fpga==1:
-    dt = 2048. / 800e6 #* 4.0 # THIS IS ONLY FOR AUGUST 22ND WHOSE TIMESTAMPS ARE BAD
+    dt = 2048. / 800e6 #* 4.0 # 
+    # THIS 4 IS ONLY FOR AUGUST 22ND WHOSE TIMESTAMPS ARE BAD
     time = (fpga_count) * dt 
     if jj==0:
         print "We're going with the fpga counts"
@@ -113,32 +106,20 @@ n_freq_bins = np.round(data_arr.shape[0] / freq_int)
 n_time_bins = np.round(data_arr.shape[-1] / time_int)
 ngate = args.n_phase_bins
 
-#folded_arr = np.zeros([n_freq_bins, ncorr, n_time_bins, n_phase_bins], np.complex128)
-
 RC = chp.RFI_Clean(data_arr, time)
 #RC.corrs = corrs
 #RC.frequency_clean()
 
-folded_arr, icount = RC.fold(data_arr, time, DM, p1, ngate=ngate, ntrebin=time_int)
+folded_arr, icount = RC.fold(DM, p1, ngate=ngate, ntrebin=time_int)
 
-folded_arr = np.concatenate((folded_arr1, folded_arr2), axis=0)
 print "Done folding"
-
-"""
-for freq in range(n_freq_bins):
-    if jj==0:
-        print "Folding freq %i" % freq 
-    for tt in range(n_time_bins):
-        folded_arr[freq, :, tt, :] = RC.fold_pulsar(p1, DM, nbins=ngate, \
-                    start_chan=freq_int*freq, end_chan=freq_int*(freq+1), start_samp=time_int*tt, end_samp=time_int*(tt+1), f_ref=400.0)
-"""
 
 count=0
 
 for letter in args.data_dir:
-    count+=1
-    if letter=='2':
-        filename=args.data_dir[count-1:count+15]
+    count += 1
+    if letter == '2':
+        filename = args.data_dir[count-1:count+15]
         break
 
 outdir = outdir + filename + '/'
@@ -150,27 +131,15 @@ else:
 
 times_actually_full = comm.gather(time, root=0)
 
-freq_full = np.linspace(800, 400, 1024)
-
 for freq in range(n_freq_bins):
 
     folded_corr = comm.gather(folded_arr[freq, :, np.newaxis], root=0)        
     icount_full = comm.gather(icount[freq], root=0)
-    auto_arr = comm.gather(data_arr_full[freq, corrs_auto], root=0)
 
     if jj == 0:
         print "Done gathering arrays for freq", freq, folded_corr[0].shape, len(folded_corr)
         final_arr = np.concatenate(folded_corr, axis=1).reshape(ncorr, -1, ngate)
         final_icount = np.concatenate(icount_full, axis=1)
-
-        if args.div_autos == 1:
-
-            auto_arr = np.concatenate(auto_arr, axis=1).mean(-1)[:, np.newaxis, np.newaxis]
-            print "Dividing by autos post"
-  
-            final_arr[:nfeeds] /= np.sqrt(abs(auto_arr) * abs(auto_arr[x, np.newaxis])) * freq_full[freq]**(0.8)
-
-            final_arr[nfeeds:] /= np.sqrt(abs(auto_arr) * abs(auto_arr[y, np.newaxis])) * freq_full[freq]**(0.8)
 
         times = np.concatenate(times_actually_full)
 
