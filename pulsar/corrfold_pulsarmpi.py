@@ -70,7 +70,7 @@ corrs.sort()
 #corrs_auto = [misc.feed_map(i, i, nfeeds) for i in feeds]
 
 # Or you can just select random correlation products
-#corrs = [0, 16, 17]
+corrs = [0, 1, 16]
 
 ncorr = len(corrs)   
     
@@ -86,6 +86,7 @@ data_obj = data_reader_obj.read()
 data_arr = data_obj.vis
 time = data_obj.timestamp
 RA = eph.transit_RA(time)
+fpga_count = data_obj.index_map['time']['fpga_count']
 
 ntimes = len(time)
 

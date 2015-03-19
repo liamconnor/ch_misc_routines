@@ -229,6 +229,18 @@ class PulsarPipeline:
                         
 
     def fringestop(self, reverse=False):
+        """ Gets a time and freq dependent phase from 
+        fringestop_phase and apply it to the data. 
+
+        Parameters
+        ==========
+        reverse : boolean
+             If True this will apply the conjugate phase
+
+        Returns
+        =======
+        Fringestopped data array (nfreq, ncorr, ntimes)
+        """
         data = self.data.copy()
 
         ha = np.deg2rad(self.RA[np.newaxis, np.newaxis, :] - self.RA_src)
@@ -334,6 +346,7 @@ class RFI_Clean(PulsarPipeline):
         data_time_norm /= np.median(data_time_norm)
         mask = data_time_norm > threshold
         self.data[:, np.where(mask)[0]] = 0.0 
+
         print "Finished cutting temporal RFI"
 
 def running_mean(arr, radius=50):
@@ -466,7 +479,7 @@ def opt_subtraction(data, phase_axis=-1, time_axis=-2, absval=True):
     data_sub = data_ - np.mean(data_, axis=phase_axis, keepdims=True)
 
     data_sub_avg = data_sub.mean(0).mean(0)[np.newaxis, np.newaxis]
-
+    weights = data_sub_avg / data_sub_avg.max()
 
     return (data * data_sub_avg).sum(axis=phase_axis)
 
