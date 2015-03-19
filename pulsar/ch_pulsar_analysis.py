@@ -1,13 +1,12 @@
 import numpy as np
-import os
-import h5py
+
 import misc_data_io as misc
 
 chime_lat = 49.320
 
 class PulsarPipeline:
 
-    def __init__(self, data_arr, time_stamps, time_res=0.010):
+    def __init__(self, data_arr, time_stamps):
         self.data = data_arr.copy()
         self.ntimes = self.data.shape[-1]
         self.time_stamps = time_stamps
@@ -20,7 +19,6 @@ class PulsarPipeline:
         self.dec = None
         self.RA_src = None
 
-        self.time_res = time_res
         self.data = np.ma.array(self.data, mask=np.zeros(self.data.shape, dtype=bool))
         self.nfreq = self.data.shape[0]
         self.highfreq = 800.0
@@ -30,9 +28,7 @@ class PulsarPipeline:
         self.ntimes = self.data.shape[-1]
         self.ncorr = self.data.shape[1]
         self.corrs = range(self.ncorr)
-        self.xcorrs = None
         self.ln = '29'
-        self.powlaw = 0
         print "Data array has shape:", self.data.shape
         
     
@@ -479,7 +475,7 @@ def opt_subtraction(data, phase_axis=-1, time_axis=-2, absval=True):
     data_sub = data_ - np.mean(data_, axis=phase_axis, keepdims=True)
 
     data_sub_avg = data_sub.mean(0).mean(0)[np.newaxis, np.newaxis]
-    weights = data_sub_avg / data_sub_avg.max()
+#    weights = data_sub_avg / data_sub_avg.max()
 
     return (data * data_sub_avg).sum(axis=phase_axis)
 
