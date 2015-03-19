@@ -19,7 +19,6 @@ def local_coords_dhl(dec_r, ha_r, lat_r):
     return E, A, P
 
 
-
 def hms_to_rad(h, m, s):
     return (h + m / 60.0 + s / 3600.0) / 24.0 * 2 * np.pi
 
