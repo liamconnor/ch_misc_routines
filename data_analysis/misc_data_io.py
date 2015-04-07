@@ -91,7 +91,8 @@ def baselines(pos_arr, n):
 
 def fft_data(arr, ft='lag'):
     """
-    Returns the windowed fft of a time/freq array along the time axis, freq axis, or both.
+    Returns the windowed fft of a time/freq array along 
+    the time axis, freq axis, or both.
     
     Parameters
     ==========
@@ -297,3 +298,20 @@ def gen_delay_tab(delays):
     del_arr = delays.repeat(n).reshape(-1, n)
 
     return (del_arr - del_arr.T)[np.triu_indices(n)]
+
+def running_mean_rfi(data, n=10, beam_ra=None):
+    """ One dimensional rfi search
+    """
+
+    m = len(data)
+    data = data[:(m//n) * n]
+
+    data_rm = data.reshape(-1, n).mean(-1).repeat(n)
+    r = (data / data_rm)
+
+    if beam_ra != None:
+        r[beam_ra] = 1.0
+        
+    mask = np.where(r > 3.0)[0]
+
+    return mask
