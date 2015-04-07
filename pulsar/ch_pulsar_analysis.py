@@ -34,7 +34,14 @@ class PulsarPipeline:
     
     def get_uv(self):
         """ Takes a layout .txt file and generates each baseline's
-        freq dependent u,v
+        freq dependent u,v arrays.
+
+        Returns
+        -------
+        u : array_like
+            (nfreq, ncorr, 1)
+        v : array_like
+            (nfreq, ncorr, 1)
         """
         fname = '/home/k/krs/connor/code/ch_misc_routines/pulsar/feed_loc_layout' + self.ln + '.txt'
         feed_loc = np.loadtxt(fname)
@@ -224,7 +231,7 @@ class PulsarPipeline:
         return data_no_ns, data_on
                         
 
-    def fringestop(self, reverse=False):
+    def fringestop(self, reverse=False, uf=1.0, vf=1.0):
         """ Gets a time and freq dependent phase from 
         fringestop_phase and apply it to the data. 
 
@@ -243,7 +250,7 @@ class PulsarPipeline:
         dec = np.deg2rad(self.dec)
 
         u, v = self.get_uv()
-        phase = self.fringestop_phase(ha, np.deg2rad(chime_lat), dec, 0.93*u, 0.93*v)
+        phase = self.fringestop_phase(ha, np.deg2rad(chime_lat), dec, uf*u, vf*v)
         
         if reverse==True:
             self.data = data * np.conj(phase)
@@ -449,7 +456,7 @@ def inj_fake_noise(data, times, cad=5):
 
     return data, p0
 
-def opt_subtraction(data, phase_axis=-1, time_axis=-2, absval=True):
+def opt_subtraction(data, phase_axis=-1, time_axis=-2, weights=None):
     """ Performs optimal on/off subtraction on folded data
 
     Parameters
@@ -462,22 +469,28 @@ def opt_subtraction(data, phase_axis=-1, time_axis=-2, absval=True):
          Time axis
     absval : bool
          Use time avg abs value as weight
+    weights : 
+         A weighting for each phase bin at each frequency
+         Must have the same dimension as the data. MUST
+         ALREADY BE AVERAGED IN TIME!
 
     Returns
     -------
     Dynamic spectrum
     """
-    if absval:
-        data_ = abs(data.copy())
+
+    if weights != None:
+        data_ = weights
+        assert len(data_.shape) == len(data.shape)
     else:
-        data_ = data
+        data_ = np.mean(abs(data.copy()), axis=time_axis, keepdims=True)
 
-    data_sub = data_ - np.mean(data_, axis=phase_axis, keepdims=True)
+    data_sub_avg = data_ - np.mean(data_, axis=phase_axis, keepdims=True)
 
-    data_sub_avg = data_sub.mean(0).mean(0)[np.newaxis, np.newaxis]
-#    weights = data_sub_avg / data_sub_avg.max()
+#    data_sub_avg = np.mean(data_sub, axis=time_axis, keepdims=True)
+    weights = data_sub_avg / data_sub_avg.sum()
 
-    return (data * data_sub_avg).sum(axis=phase_axis)
+    return (data * weights).mean(axis=phase_axis)
 
 def common_phasebins(PulsarPipeline, p1, p2, 
                      ngate1, ngate2, on1, on2):
