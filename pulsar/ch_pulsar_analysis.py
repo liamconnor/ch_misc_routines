@@ -129,7 +129,7 @@ class PulsarPipeline:
 
                     fold_arr[fi, corr, ti, :] = data_fold_r + 1j * data_fold_i
 
-        return fold_arr, icount[:, np.newaxis]
+        return fold_arr, icount[:, np.newaxis], bins_all
 
     def phase_bins(self, p0, dm, ngate):
 
@@ -141,6 +141,79 @@ class PulsarPipeline:
 
             tau = self.dm_delays(dm, 400)
             times_del = times - tau[fi]
+
+            bins[fi] = (((times_del / p0) % 1) * ngate).astype(np.int)
+
+        return bins
+
+
+    def fold2(self, dm, p0, times, ntrebin=100, ngate=32):
+        """Folds pulsar into nbins after dedispersing it. 
+        
+        Parameters
+        ----------
+        p0 : float
+                Pulsar period in seconds. 
+        dm : float
+                Dispersion measure in pc/cm**3
+        ntrebin : np.int
+                Number of time stamps that go into folded period
+        ngate : np.int
+                Number of phase bins to fold on
+                
+        Returns
+        -------
+        fold_arr : array_like 
+                Folded complex array shaped (nfreq, ncorr, ntimes/ntrebin, ngate)
+        icount : array_like
+                Number of elements in given phase bin (nfreq, ntimes/ntrebin, ngate)
+
+        """        
+
+        ntimes = self.data.shape[-1] // ntrebin
+        ncorr = self.data.shape[1]
+
+        fold_arr = np.zeros([self.nfreq, ncorr, ntimes, ngate], np.complex128)
+        icount = np.zeros([self.nfreq, ntimes, ngate], np.int32)
+
+        dshape = self.data.shape[:-1] + (ntimes, ntrebin)
+
+        data_rb = self.data[..., :(ntimes*ntrebin)].reshape(dshape)
+        
+        bins_all = self.phase_bins2(p0, dm, ngate, times)
+
+        for fi in range(self.nfreq):
+            if (fi % 128) == 0:
+                print "Folded freq", fi
+            tau = self.dm_delays(dm, 400)
+
+            bins = bins_all[fi, :(ntrebin*ntimes)].reshape(ntimes, ntrebin)
+
+            for ti in range(ntimes):
+
+                icount[fi, ti] = np.bincount(bins[ti], data_rb[fi, 0, ti] != 0., ngate)
+
+                for corr in range(ncorr):
+
+                    data_fold_r = np.bincount(bins[ti], 
+                                              weights=data_rb[fi, corr, ti].real, minlength=ngate)
+                    data_fold_i = np.bincount(bins[ti], 
+                                              weights=data_rb[fi, corr, ti].imag, minlength=ngate)
+
+                    fold_arr[fi, corr, ti, :] = data_fold_r + 1j * data_fold_i
+
+        return fold_arr, icount[:, np.newaxis]
+
+    def phase_bins2(self, p0, dm, ngate, times):
+
+        bins = np.zeros([self.nfreq, self.ntimes], np.int)
+        
+#        times = self.time_stamps
+
+        for fi in range(self.nfreq):
+
+            tau = self.dm_delays(dm, 400)
+            times_del = times[fi] - tau[fi]
 
             bins[fi] = (((times_del / p0) % 1) * ngate).astype(np.int)
 
